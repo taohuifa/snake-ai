@@ -50,3 +50,13 @@ Gym 的简单接口使得即使是初学者也能快速上手，进行实验和�
 Gym 环境允许研究人员和开发者在相同的环境中测试不同的算法，从而进行公平比较。
 #### 支持多种强化学习库：
 Gym 可以与多种强化学习库配合使用，如 Stable Baselines、RLlib、TensorFlow Agents 等。
+
+## sb3_contrib
+### MaskablePPO:
+MaskablePPO 是 Proximal Policy Optimization (PPO) 的一个变体，通过动作掩蔽机制来增强标准的PPO算法。动作掩蔽可以在动作空间中禁用某些动作，这对于某些有约束的环境非常有用，比如在某些状态下某些动作是非法的或者无效的。
+
+### ActionMasker:
+ActionMasker 是一个用于在环境中应用动作掩蔽的工具。它允许你在环境的某些状态下指定哪些动作是可用的，哪些不可用。
+
+
+

@@ -1,6 +1,9 @@
 import gym
 import pygame
 import numpy as np
+import time
+
+# CartPole-v1 部署成磁盘输入
 
 # 初始化 pygame
 pygame.init()
@@ -55,6 +58,7 @@ while running:
 
     # 控制帧率
     clock.tick(60)
+    time.sleep(0.1)
 
 # 结束
 env.close()

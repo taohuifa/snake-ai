@@ -13,6 +13,8 @@ from sb3_contrib.common.wrappers import ActionMasker  # 用于在环境中应用
 from snake_game_custom_wrapper_cnn import SnakeEnv  # 自定义的贪吃蛇游戏环境
 
 # 根据是否支持MPS（Metal Performance Shaders）来设置环境数量
+# MPS（Metal Performance Shaders）是苹果公司提供的一组高性能计算框架，专门用于在其设备（如Mac和iOS设备）上加速机器学习和图像处理任务。
+# 如果你在使用PyTorch框架进行深度学习或其他计算密集型任务时，可以利用这些功能来加速计算。
 if torch.backends.mps.is_available():
     NUM_ENV = 32 * 2  # 如果支持MPS，则使用64个环境
 else:
