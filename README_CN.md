@@ -30,6 +30,7 @@
 # 创建 conda 环境，将其命名为 SnakeAI，Python 版本 3.8.16
 conda create -n SnakeAI python=3.8.16
 conda activate SnakeAI
+# vscode 输入 Ctrl + Shift + P -> Python: Select Interpreter -> SnakeAI
 ```
 
 在 Windows 与 macOS 下配置外部代码库的过程略有不同。Windows 下使用 CUDA 加速，macOS 下则使用 MPS (Metal Performance Shaders) 进行加速，且需要降级 `pip` 与 `setuptools`。
@@ -43,7 +44,7 @@ conda install pytorch=2.0.0 torchvision pytorch-cuda=11.8 -c pytorch -c nvidia
 python .\utils\check_gpu_status.py
 
 # 安装外部代码库
-pip install -r requirements.txt
+pip install  --no-cache-dir -r requirements.txt 
 ```
 
 macOS (Apple Silicon):
@@ -75,8 +76,8 @@ python .\snake_game.py
 
 ```bash
 cd [项目上级文件夹]/snake-ai/main
-python test_cnn.py
-python test_mlp.py
+python test_cnn.py # CNN 卷积神经网络
+python test_mlp.py # MLP 多层感知机
 ```
 
 模型权重文件存储在 `main/trained_models_cnn/` 与 `main/trained_models_mlp/` 文件夹下。两份测试脚本均默认调用训练完成后的模型。如果需要观察不同训练阶段的 AI 表现，可将测试脚本中的 `MODEL_PATH` 变量修改为其它模型的文件路径。
