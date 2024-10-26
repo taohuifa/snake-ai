@@ -1,39 +1,46 @@
 import math
-import time # For debugging.
+import time  # For debugging.
 
 import gym
 import numpy as np
 
 from snake_game import SnakeGame
 
+
 class SnakeEnv(gym.Env):
     def __init__(self, seed=0, board_size=12, silent_mode=True, limit_step=True):
         super().__init__()
+        # 初始化贪吃蛇游戏
         self.game = SnakeGame(seed=seed, board_size=board_size, silent_mode=silent_mode)
         self.game.reset()
 
-        self.action_space = gym.spaces.Discrete(4) # 0: UP, 1: LEFT, 2: RIGHT, 3: DOWN
-        
+        # 定义动作空间: 0: 上, 1: 左, 2: 右, 3: 下
+        self.action_space = gym.spaces.Discrete(4)
+
+        # 定义观察空间: self.game.board_size * 2
         self.observation_space = gym.spaces.Box(
             low=-1, high=1,
             shape=(self.game.board_size, self.game.board_size),
             dtype=np.float32
-        ) # 0: empty, 0.5: snake body, 1: snake head, -1: food
+        )  # 0: empty, 0.5: snake body, 1: snake head, -1: food
 
         self.board_size = board_size
-        self.grid_size = board_size ** 2 # Max length of snake is board_size^2
-        self.init_snake_size = len(self.game.snake)
-        self.max_growth = self.grid_size - self.init_snake_size
+        self.grid_size = board_size ** 2  # 蛇的最大长度为棋盘大小的平方
+        self.init_snake_size = len(self.game.snake)  # 蛇初始长度
+        self.max_growth = self.grid_size - self.init_snake_size  # 计算最大分数(蛇长度-初始长度)
 
         self.done = False
 
+        # 设置步数限制
         if limit_step:
-            self.step_limit = self.grid_size * 4 # More than enough steps to get the food.
+            self.step_limit = self.grid_size * 4  # 足够获取食物的步数
         else:
-            self.step_limit = 1e9 # Basically no limit.
-        self.reward_step_counter = 0
+            self.step_limit = 1e9  # 基本上没有限制
+
+        self.reward_step_counter = 0  # 步数计算
 
     def reset(self):
+        # 重置游戏状态
         self.game.reset()
 
         self.done = False
@@ -41,89 +48,95 @@ class SnakeEnv(gym.Env):
 
         obs = self._generate_observation()
         return obs
-    
+
     def step(self, action):
-        self.done, info = self.game.step(action) # info = {"snake_size": int, "snake_head_pos": np.array, "prev_snake_head_pos": np.array, "food_pos": np.array, "food_obtained": bool}
+        # 执行动作并获取游戏状态
+        self.done, info = self.game.step(action)  # info = {"snake_size": int, "snake_head_pos": np.array, "prev_snake_head_pos": np.array, "food_pos": np.array, "food_obtained": bool}
         obs = self._generate_observation()
 
         reward = 0.0
         self.reward_step_counter += 1
 
-        if self.reward_step_counter > self.step_limit: # Step limit reached, game over.
+        # 达到步数限制，游戏结束
+        if self.reward_step_counter > self.step_limit:
             self.reward_step_counter = 0
             self.done = True
-        
-        if self.done: # Snake bumps into wall or itself. Episode is over.
-            # Game Over penalty is based on snake size.
+
+        # 蛇撞墙或撞到自己，游戏结束
+        if self.done:
+            # 游戏结束惩罚基于蛇的大小
             # reward = - math.pow(self.max_growth, (self.grid_size - info["snake_size"]) / self.max_growth) # (-max_growth, -1)
             # return obs, reward * 0.1, self.done, info
 
             # Linear penalty decay.
-            reward = info["snake_size"] - self.grid_size # (-max_growth, 0)
+            reward = info["snake_size"] - self.grid_size  # (-max_growth, 0)
             return obs, reward * 0.1, self.done, info
-        
-        elif info["food_obtained"]: # food eaten
+
+        # 蛇吃到食物
+        elif info["food_obtained"]:
             # Reward on num_steps between getting food.
-            reward = math.exp((self.grid_size - self.reward_step_counter) / self.grid_size) # (0, e)
-            self.reward_step_counter = 0 # Reset reward step counter
-        
+            reward = math.exp((self.grid_size - self.reward_step_counter) / self.grid_size)  # (0, e)
+            self.reward_step_counter = 0  # Reset reward step counter
+
         else:
+            # 根据蛇是否朝食物方向移动给予小额奖励/惩罚
             if np.linalg.norm(info["snake_head_pos"] - info["food_pos"]) < np.linalg.norm(info["prev_snake_head_pos"] - info["food_pos"]):
-                reward = 1 / info["snake_size"] # No upper limit might enable the agent to master shorter scenario faster and more firmly.
+                reward = 1 / info["snake_size"]  # No upper limit might enable the agent to master shorter scenario faster and more firmly.
             else:
                 reward = - 1 / info["snake_size"]
             # print(reward*0.1)
             # time.sleep(1)
 
         # max_score: 144e - 1 = 390
-        # min_score: -141 
+        # min_score: -141
 
         # Linear:
         # max_score: 288
         # min_score: -141
 
-        reward = reward * 0.1 # Scale reward
+        reward = reward * 0.1  # Scale reward
         return obs, reward, self.done, info
-    
+
     def render(self):
         self.game.render()
 
     def get_action_mask(self):
+        # 获取有效动作掩码
         return np.array([[self._check_action_validity(a) for a in range(self.action_space.n)]])
-    
+
     # Check if the action is against the current direction of the snake or is ending the game.
     def _check_action_validity(self, action):
+        # 检查动作是否有效（不会导致游戏立即结束）
         current_direction = self.game.direction
         snake_list = self.game.snake
         row, col = snake_list[0]
-        if action == 0: # UP
+
+        # 根据动作更新蛇头位置
+        if action == 0:  # 上
             if current_direction == "DOWN":
                 return False
             else:
                 row -= 1
-
-        elif action == 1: # LEFT
+        elif action == 1:  # 左
             if current_direction == "RIGHT":
                 return False
             else:
                 col -= 1
-
-        elif action == 2: # RIGHT 
+        elif action == 2:  # 右
             if current_direction == "LEFT":
                 return False
             else:
-                col += 1     
-        
-        elif action == 3: # DOWN 
+                col += 1
+        elif action == 3:  # 下
             if current_direction == "UP":
                 return False
             else:
                 row += 1
 
-        # Check if snake collided with itself or the wall. Note that the tail of the snake would be poped if the snake did not eat food in the current step.
+        # 检查蛇是否撞到自己或墙壁
         if (row, col) == self.game.food:
             game_over = (
-                (row, col) in snake_list # The snake won't pop the last cell if it ate food.
+                (row, col) in snake_list
                 or row < 0
                 or row >= self.board_size
                 or col < 0
@@ -131,7 +144,7 @@ class SnakeEnv(gym.Env):
             )
         else:
             game_over = (
-                (row, col) in snake_list[:-1] # The snake will pop the last cell if it did not eat food.
+                (row, col) in snake_list[:-1]
                 or row < 0
                 or row >= self.board_size
                 or col < 0
@@ -145,9 +158,11 @@ class SnakeEnv(gym.Env):
 
     # EMPTY: 0; SnakeBODY: 0.5; SnakeHEAD: 1; FOOD: -1;
     def _generate_observation(self):
+        # 生成观察状态
+        # 空白: 黑色; 蛇身: 灰色; 蛇头: 绿色; 食物: 红色
         obs = np.zeros((self.game.board_size, self.game.board_size), dtype=np.float32)
         obs[tuple(np.transpose(self.game.snake))] = np.linspace(0.8, 0.2, len(self.game.snake), dtype=np.float32)
-        obs[tuple(self.game.snake[0])] = 1.0            
+        obs[tuple(self.game.snake[0])] = 1.0
         obs[tuple(self.game.food)] = -1.0
         return obs
 
@@ -158,7 +173,7 @@ class SnakeEnv(gym.Env):
 
 # if __name__ == "__main__":
 #     env = SnakeEnv(silent_mode=False)
-    
+
     # # Test Init Efficiency
     # print(MODEL_PATH_S)
     # print(MODEL_PATH_L)
@@ -171,7 +186,7 @@ class SnakeEnv(gym.Env):
 
     # # 0: UP, 1: LEFT, 2: RIGHT, 3: DOWN
     # action_list = [1, 1, 1, 0, 0, 0, 2, 2, 2, 3, 3, 3]
-    
+
     # for _ in range(NUM_EPISODES):
     #     obs = env.reset()
     #     done = False
@@ -187,7 +202,7 @@ class SnakeEnv(gym.Env):
     #         if np.absolute(reward) > 0.001:
     #             print(reward)
     #         env.render()
-            
+
     #         time.sleep(RENDER_DELAY)
     #     # print(info["snake_length"])
     #     # print(info["food_pos"])
@@ -195,6 +210,6 @@ class SnakeEnv(gym.Env):
     #     print("sum_reward: %f" % sum_reward)
     #     print("episode done")
     #     # time.sleep(100)
-    
+
     # env.close()
     # print("Average episode reward for random strategy: {}".format(sum_reward/NUM_EPISODES))
