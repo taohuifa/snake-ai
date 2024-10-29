@@ -45,8 +45,10 @@ class PPO:
         self.epsilon = epsilon  # PPO的剪切参数
         self.epochs = epochs  # 更新的轮数
 
-        # 初始化策略网络和价值网络
-        self.policy = PolicyNetwork(env.observation_space.shape[0], env.action_space.n)
+        print("env.observation_space.shape: ", env.observation_space.shape)
+        # 初始化策略网络 
+        self.policy = PolicyNetwork(env.observation_space.shape[0], env.action_space.n) 
+        # 初始化价值网络
         self.value = ValueNetwork(env.observation_space.shape[0])
         # 使用Adam优化器
         self.optimizer = optim.Adam(list(self.policy.parameters()) + list(self.value.parameters()), lr=learning_rate)
