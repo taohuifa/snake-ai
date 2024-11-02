@@ -2,6 +2,7 @@
 # Q&A
 ## 降级 pip 与 setuptools
 ```shell
+conda activate  SnakeAI
 # 查看版本
 pip --version
 pip show setuptools
@@ -95,8 +96,11 @@ Gym 环境允许研究人员和开发者在相同的环境中测试不同的算�
 #### 支持多种强化学习库：
 Gym 可以与多种强化学习库配合使用，如 Stable Baselines、RLlib、TensorFlow Agents 等。
 
+https://blog.csdn.net/lyx369639/article/details/127085462
+
 ## sb3_contrib
-### MaskablePPO:
+### PPO（Proximal Policy Optimization，近端策略优化）是一种用于强化学习的算法
+### MaskablePPO: 
 MaskablePPO 是 Proximal Policy Optimization (PPO) 的一个变体，通过动作掩蔽机制来增强标准的PPO算法。动作掩蔽可以在动作空间中禁用某些动作，这对于某些有约束的环境非常有用，比如在某些状态下某些动作是非法的或者无效的。
 
 ### ActionMasker:

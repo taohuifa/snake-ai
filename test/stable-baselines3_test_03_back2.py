@@ -42,7 +42,7 @@ class ValueNetwork(nn.Module):
 
 # 实现PPO算法
 class PPO:
-    def __init__(self, env, learning_rate=3e-4, gamma=0.99, epsilon=0.2, epochs=100):
+    def __init__(self, env, learning_rate=3e-4, gamma=0.99, epsilon=0.2, epochs=10):
         self.env = env  # 环境
         self.gamma = gamma  # 折扣因子
         self.epsilon = epsilon  # PPO的剪切参数
@@ -137,9 +137,7 @@ class PPO:
             old_log_probs = torch.stack(log_probs).detach()  # 将对数概率, 每一次选择这个动作的可能性高低, shape: ([N])
             returns = torch.FloatTensor(returns).detach()  # shape: ([N]), 每次一个回报值(比起一次操作变化)
             advantages = torch.FloatTensor(advantages).detach()  # 优势情况, shape: ([N])
-            # print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
-            if timestep % 100 == 0:
-                print(f"timestep: {timestep} Total reward: {total_reward}")
+            print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
 
             for epoch in range(self.epochs):
                 # logits = torch.tensor([0.5, 1.0, 0.1])  # 三个动作的 logits
@@ -171,13 +169,12 @@ class PPO:
                     actor_loss = -torch.min(surr1, surr2).mean()  # 取最小的策略损失值, size: 标量
                 else:
                     actor_loss = - surr1.mean()  # 直接计算损失
-
+ 
                 critic_loss = nn.MSELoss()(new_values, returns)     # 计算价值损失(拿新的价值, 跟之前的回包做比对), size: 标量
 
                 l = actor_loss + 0.5 * critic_loss   # 总损失
                 # print(f"epoch: {epoch}, loss: {l}, ratio: {ratio.shape} actor_loss: {actor_loss} critic_loss: {critic_loss} ")
-                if timestep % 100 == 0 and (epoch == self.epochs):
-                    print(f"epoch: {epoch}, loss: {l}")
+                # print(f"epoch: {epoch}, loss: {l}")
 
                 self.optimizer.zero_grad()  # 清空梯度
                 l.backward()  # 反向传播，保留计算图
@@ -185,8 +182,7 @@ class PPO:
 
 
 if __name__ == '__main__':
-    # env = gym.make('MountainCar-v0')  # 创建CartPole环境
-    env = gym.make('CartPole-v1')  # 创建CartPole环境
-    ppo = PPO(env, epochs=100)  # 初始化PPO算法
-    ppo.learn(total_timesteps=1000)  # 开始学习
+    env = gym.make('MountainCar-v0')  # 创建CartPole环境
+    ppo = PPO(env)  # 初始化PPO算法
+    ppo.learn(total_timesteps=10)  # 开始学习
     env.close()  # 关闭环境
