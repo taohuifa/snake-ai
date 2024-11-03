@@ -4,6 +4,8 @@ import torch  # 导入PyTorch库，用于构建和训练神经网络
 import torch.nn as nn  # 导入PyTorch的神经网络模块
 import torch.optim as optim  # 导入PyTorch的优化器模块
 from torch.distributions import Categorical  # 导入分类分布，用于处理离散动作
+import zipfile  # 导入zipfile库，用于处理zip文件
+import os  # 导入os库，用于文件操作
 
 
 # 定义策略网络
@@ -58,6 +60,9 @@ class PPO:
         params = list(self.policy.parameters()) + list(self.value.parameters())
         # self.optimizer = optim.Adam(params, lr=learning_rate)
         self.optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9)
+
+    def predict(self, state):
+        return self.get_action(state)
 
     def get_action(self, state):
         state = torch.FloatTensor(state)  # 将状态转换为张量
@@ -184,10 +189,33 @@ class PPO:
                 l.backward()  # 反向传播，保留计算图
                 self.optimizer.step()  # 更新参数
 
+    def save_model(self, file_name):
+        # 保存模型的状态字典
+        torch.save({
+            'policy_state_dict': self.policy.state_dict(),
+            'value_state_dict': self.value.state_dict(),
+        }, file_name)
+
+    def load_model(self, file_name):
+
+        # 加载模型的状态字典
+        checkpoint = torch.load(file_name)
+        self.policy.load_state_dict(checkpoint['policy_state_dict'])
+        self.value.load_state_dict(checkpoint['value_state_dict'])
+
+
+# game_name = 'CartPole-v1'
+game_name = 'MountainCar-v0'
 
 if __name__ == '__main__':
-    env = gym.make('CartPole-v1')  # 创建CartPole环境
+    env = gym.make(game_name)  # 创建CartPole环境
     # env = gym.make('MountainCar-v0')
     ppo = PPO(env, epochs=20)  # 初始化PPO算法
     ppo.learn(total_timesteps=1000)  # 开始学习
+
+    # 保存模型
+    save_file = f"logs/{game_name}.zip"
+    ppo.save_model(save_file)  # 保存模型为.pt文件
+    print(f"learn finish, save {save_file}")
+
     env.close()  # 关闭环境

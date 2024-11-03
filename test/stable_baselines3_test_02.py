@@ -11,8 +11,10 @@ if __name__ == '__main__':
     print("start pid: %d" % (os.getpid()))
  
 
-    name_prefix = "ppo_cartpole"
-    game_name = 'CartPole-v1'
+    # name_prefix = "ppo_cartpole"
+    # game_name = 'CartPole-v1'
+    name_prefix = "ppo_mountaincar"
+    game_name = 'MountainCar-v0'
     env = Monitor(gym.make(game_name))
 
     # 创建 PPO 模型
@@ -24,7 +26,7 @@ if __name__ == '__main__':
 
     # 训练模型
     model.learn(total_timesteps=10000, callback=checkpoint_callback)
-    print(f"model learn finish: {model}")
+    print(f"model learn finish: {model} -> {name_prefix}")
 
     # 评估模型
     model.save(f'./logs/{name_prefix}')  # 保存模型
