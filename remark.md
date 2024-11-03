@@ -97,6 +97,9 @@ Gym 环境允许研究人员和开发者在相同的环境中测试不同的算�
 Gym 可以与多种强化学习库配合使用，如 Stable Baselines、RLlib、TensorFlow Agents 等。
 
 https://blog.csdn.net/lyx369639/article/details/127085462
+https://www.cnblogs.com/tiandsp/p/18124932
+
+https://www.cnblogs.com/cenariusxz/p/12666938.html
 
 ## sb3_contrib
 ### PPO（Proximal Policy Optimization，近端策略优化）是一种用于强化学习的算法
