@@ -83,7 +83,7 @@ class PPO:
         return returns, advantages  # 返回回报和优势值
 
     def learn(self, total_timesteps):
-        for _ in range(total_timesteps):
+        for timestep in range(total_timesteps):
             state = self.env.reset()  # 重置环境
             done = False  # 任务是否完成
             total_reward = 0  # 总奖励
@@ -95,7 +95,7 @@ class PPO:
                 action, log_prob = self.get_action(state)  # 获取动作和对数概率
                 next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励
                 value = self.value(torch.FloatTensor(state)).item()  # 计算当前状态的价值
-
+                # print(f"step: {len(states)} reward: {reward} done: {done}")
                 # 存储数据
                 states.append(state)
                 actions.append(action)
@@ -111,7 +111,7 @@ class PPO:
             returns, advantages = self.compute_gae(rewards, values, next_value, dones)  # 计算回报和优势值
 
             # 转换为张量
-            states = torch.FloatTensor(states).detach()
+            states = torch.FloatTensor(np.array(states)).detach()
             actions = torch.LongTensor(actions).detach()
             returns = torch.FloatTensor(returns).detach()
             advantages = torch.FloatTensor(advantages).detach()
@@ -134,11 +134,13 @@ class PPO:
                 loss.backward()  # 反向传播
                 self.optimizer.step()  # 更新参数
 
-            print(f"Total reward: {total_reward}")  # 打印总奖励
+            if timestep % 100 == 0:
+                print(f"timestep: {timestep} Total reward: {total_reward} shape: {returns.shape[0]}")  # 打印总奖励
 
 
 if __name__ == '__main__':
-    env = gym.make('CartPole-v1')  # 创建CartPole环境
-    ppo = PPO(env, epochs=20)  # 初始化PPO算法
-    ppo.learn(total_timesteps=1000)  # 开始学习
+    # env = gym.make('CartPole-v1')  # 创建CartPole环境
+    env = gym.make('MountainCar-v0')  
+    ppo = PPO(env, epochs=10)  # 初始化PPO算法
+    ppo.learn(total_timesteps=1)  # 开始学习
     env.close()  # 关闭环境

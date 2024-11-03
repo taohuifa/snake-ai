@@ -2,26 +2,34 @@ import gym
 import pygame
 import numpy as np
 import time
+import os
 print(gym.envs.registry.all())
 # CartPole-v1 部署成磁盘输入
 
 # 初始化 pygame
 pygame.init()
 
-# 创建 Gym 环境
-# env = gym.make('CartPole-v1')  # CartPole-v1（平衡车）
-# action_map = {
-#     pygame.K_LEFT: 0,
-#     pygame.K_RIGHT: 1,
-#     0: None,  # 默认
-# }
+gameName = 'CartPole-v1'
+# gameName = 'MountainCar-v0'
 
-env = gym.make('MountainCar-v0')  # MountainCar-v0（山地车）
-action_map = {
-    pygame.K_LEFT: 0,  # 向左推
-    pygame.K_RIGHT: 2,  # 向右推
-    0: 1,  # 默认
-} 
+# 创建 Gym 环境
+if gameName == 'CartPole-v1':
+    env = gym.make(gameName)  # CartPole-v1（平衡车）
+    action_map = {
+        pygame.K_LEFT: 0,
+        pygame.K_RIGHT: 1,
+        0: None,  # 默认
+    }
+elif gameName == 'MountainCar-v0':
+    env = gym.make(gameName)  # MountainCar-v0（山地车）
+    action_map = {
+        pygame.K_LEFT: 0,  # 向左推
+        pygame.K_RIGHT: 2,  # 向右推
+        0: 1,  # 默认
+    }
+else:
+    print(f"unknow game {gameName}")
+    os._exit(1)
 
 # 设置窗口
 screen = pygame.display.set_mode((600, 400))
@@ -52,18 +60,12 @@ while running:
     action = next((action for key, action in action_map.items() if keys[key]), action_map[0])  # 默认动作为 1
 
     done = None
-    if action != None:
-        print("action: %d" % (action))
-        # 采取动作
-        observation, reward, done, info = env.step(action)
-
-        # # 渲染环境
-        # frame = env.render()
-        # frame = pygame.surfarray.make_surface(frame.swapaxes(0, 1))
-        # screen.blit(pygame.transform.scale(frame, (600, 400)), (0, 0))
-        # pygame.display.flip()
-    else:
+    if action is None:
         continue
+
+    # 采取动作
+    observation, reward, done, info = env.step(action)
+    print(f"action: {action} reward: {reward} info: {info}")
 
     if done:
         print("game is done to reset")

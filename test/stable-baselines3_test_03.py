@@ -55,7 +55,9 @@ class PPO:
         # 初始化价值网络
         self.value = ValueNetwork(env.observation_space.shape[0])
         # 使用Adam优化器
-        self.optimizer = optim.Adam(list(self.policy.parameters()) + list(self.value.parameters()), lr=learning_rate)
+        params = list(self.policy.parameters()) + list(self.value.parameters())
+        # self.optimizer = optim.Adam(params, lr=learning_rate)
+        self.optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9)
 
     def get_action(self, state):
         state = torch.FloatTensor(state)  # 将状态转换为张量
@@ -88,10 +90,12 @@ class PPO:
 
         # 反向计算优势值
         for t in reversed(range(len(rewards))):
+            # r = 1.0 - (len(rewards) - t) / len(rewards)
+            r = (len(rewards) - t) / len(rewards)
             # 损失误差: 奖励值 + (gamma * 下一次的价值) * (如果成功, 则下一次的DT这次的损失为0)
             delta = rewards[t] + gamma * last_value * (1 - dones[t]) - values[t]  # 计算TD误差
-            last_advantage = delta + gamma * lam * (1 - dones[t]) * last_advantage  # 计算优势值
-            # print(f"compute_gae[{t}]: reward: {rewards[t]} value: {values[t]} -> {last_value}, done: {1 - dones[t]}. delta: {delta}, last_advantage: {last_advantage} ")
+            last_advantage = delta + gamma * lam * (1 - dones[t]) * last_advantage * r  # 计算优势值
+            # print(f"compute_gae[{t}]: reward: {rewards[t]} value: {values[t]} -> {last_value}, done: {dones[t]}. delta: {delta}, last_advantage: {last_advantage} r: {r}")
             advantages.insert(0, last_advantage)  # 将优势值插入到列表的开头
             last_value = values[t]  # 更新最后的价值
 
@@ -113,6 +117,7 @@ class PPO:
                 action, log_prob = self.get_action(state)  # 获取动作和对数概率
                 next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励
                 value = self.value(torch.FloatTensor(state)).item()  # 计算当前状态的价值
+                # print(f"step: {len(states)} reward: {reward} done: {done}")
 
                 # 存储数据(把每个步骤的处理结果和回包都记录起来)
                 states.append(state)  # size: ([2,])
@@ -138,8 +143,8 @@ class PPO:
             returns = torch.FloatTensor(returns).detach()  # shape: ([N]), 每次一个回报值(比起一次操作变化)
             advantages = torch.FloatTensor(advantages).detach()  # 优势情况, shape: ([N])
             # print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
-            if timestep % 100 == 0:
-                print(f"timestep: {timestep} Total reward: {total_reward}")
+            if (timestep % 100 == 0) or (timestep == total_timesteps - 1):
+                print(f"timestep: {timestep} Total reward: {total_reward} shape: {returns.shape[0]}")
 
             for epoch in range(self.epochs):
                 # logits = torch.tensor([0.5, 1.0, 0.1])  # 三个动作的 logits
@@ -163,14 +168,10 @@ class PPO:
                 # -> 这个比率用于衡量策略更新的幅度，确保在PPO算法中，策略不会过度更新。
                 ratio = (new_log_probs - old_log_probs).exp()  # 每一步骤的概率值, size (N)
                 surr1 = ratio * advantages  # 差值 * 当前步骤时的优势 size: (N)
-                if self.epsilon != None:
-                    # 损失值裁剪: (1 - self.epsilon, 1 + self.epsilon) 默认: (0.8 ~ 1.2)
-                    surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantages  # 计算过裁剪后的插值 size: (N)
-
-                    # 计算策略损失(取最小值)
-                    actor_loss = -torch.min(surr1, surr2).mean()  # 取最小的策略损失值, size: 标量
-                else:
-                    actor_loss = - surr1.mean()  # 直接计算损失
+                # 损失值裁剪: (1 - self.epsilon, 1 + self.epsilon) 默认: (0.8 ~ 1.2)
+                surr2 = torch.clamp(ratio, 1 - self.epsilon, 1 + self.epsilon) * advantages  # 计算过裁剪后的插值 size: (N)
+                # 计算策略损失(取最小值)
+                actor_loss = -torch.min(surr1, surr2).mean()  # 取最小的策略损失值, size: 标量
 
                 critic_loss = nn.MSELoss()(new_values, returns)     # 计算价值损失(拿新的价值, 跟之前的回包做比对), size: 标量
 
@@ -185,8 +186,8 @@ class PPO:
 
 
 if __name__ == '__main__':
-    # env = gym.make('MountainCar-v0')  # 创建CartPole环境
     env = gym.make('CartPole-v1')  # 创建CartPole环境
-    ppo = PPO(env, epochs=100)  # 初始化PPO算法
+    # env = gym.make('MountainCar-v0')
+    ppo = PPO(env, epochs=20)  # 初始化PPO算法
     ppo.learn(total_timesteps=1000)  # 开始学习
     env.close()  # 关闭环境
