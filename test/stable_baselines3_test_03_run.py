@@ -12,7 +12,7 @@ if __name__ == '__main__':
     env = gym.make(game_name)
     
     # 加载模型
-    load_file = f"logs/{game_name}.zip"
+    load_file = f"logs/{model_file}.zip"
     model = PPO(env, epochs=20)
     model.load_model(load_file)
 

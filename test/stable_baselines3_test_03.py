@@ -206,15 +206,16 @@ class PPO:
 
 # game_name = 'CartPole-v1'
 game_name = 'MountainCar-v0'
+model_file = f"{game_name.replace('-','_').lower()}_test03"
 
 if __name__ == '__main__':
     env = gym.make(game_name)  # 创建CartPole环境
     # env = gym.make('MountainCar-v0')
-    ppo = PPO(env, epochs=20)  # 初始化PPO算法
+    ppo = PPO(env, epochs=10)  # 初始化PPO算法
     ppo.learn(total_timesteps=1000)  # 开始学习
 
     # 保存模型
-    save_file = f"logs/{game_name}.zip"
+    save_file = f"logs/{model_file}.zip"
     ppo.save_model(save_file)  # 保存模型为.pt文件
     print(f"learn finish, save {save_file}")
 

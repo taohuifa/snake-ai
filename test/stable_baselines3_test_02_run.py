@@ -6,20 +6,14 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.callbacks import CheckpointCallback
-
+from stable_baselines3_test_02 import *
 
 if __name__ == '__main__':
     print("start pid: %d" % (os.getpid()))
-    # 创建多个并行环境
 
-    # name_prefix = "ppo_cartpole"
-    # game_name = 'CartPole-v1'
-    name_prefix = "ppo_mountaincar"
-    game_name = 'MountainCar-v0'
     env = Monitor(gym.make(game_name))
-
     # 加载模型
-    model = PPO.load(f'./logs/{name_prefix}')
+    model = PPO.load(f'./logs/{model_file}')
 
     # 初始化 pygame
     pygame.init()
