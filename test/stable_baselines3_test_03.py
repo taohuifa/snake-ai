@@ -119,10 +119,11 @@ class PPO:
 
             # 遍历尝试操作游戏, 第一次通常是200次就失败
             while not done:
+                # print(f"state: {state.shape}")
                 action, log_prob = self.get_action(state)  # 获取动作和对数概率
                 next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励
                 value = self.value(torch.FloatTensor(state)).item()  # 计算当前状态的价值
-                # print(f"step: {len(states)} reward: {reward} done: {done}")
+                print(f"step: {len(states)} action: {action} reward: {reward} done: {done}")
 
                 # 存储数据(把每个步骤的处理结果和回包都记录起来)
                 states.append(state)  # size: ([2,])
@@ -205,7 +206,8 @@ class PPO:
 
 
 # game_name = 'CartPole-v1'
-game_name = 'MountainCar-v0'
+# game_name = 'MountainCar-v0'
+game_name = 'CubeCrash-v0'
 model_file = f"{game_name.replace('-','_').lower()}_test03"
 
 if __name__ == '__main__':
