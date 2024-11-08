@@ -3,13 +3,14 @@ import os
 import gym  # 导入OpenAI Gym库，用于创建和管理环境
 import pygame
 import time
+import common
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from stable_baselines3_test_03 import *
 
 
 if __name__ == '__main__':
-    env = gym.make(game_name)
+    env = common.gym_make(game_name)
 
     # 加载模型
     load_file = f"logs/{model_file}.zip"
@@ -47,7 +48,6 @@ if __name__ == '__main__':
             obs = env.reset()
             time.sleep(1)
             continue
-
 
     # 关闭环境
     env.close()

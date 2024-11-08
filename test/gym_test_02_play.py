@@ -18,10 +18,6 @@ action_map = {
 # 初始化 pygame
 pygame.init()
 
-# 设置窗口
-# screen = pygame.display.set_mode((800, 600))  # 调整窗口大小
-screen = pygame.display.set_mode((400, 300))  # 调整窗口大小
-pygame.display.set_caption("Pong Control")
 
 # 重置环境
 observation = env.reset()
@@ -29,6 +25,11 @@ observation = env.reset()
 print(f"动作空间的形状: {env.action_space.shape}, 可能的动作数量: {env.action_space.n}")
 for action in range(env.action_space.n):
     print(f"  动作 {action}: {env.action_space.contains(action)}")
+
+# 设置窗口
+# screen = pygame.display.set_mode((800, 600))  # 调整窗口大小
+screen = pygame.display.set_mode((400, 400))  # 调整窗口大小
+pygame.display.set_caption("Pong Control")
 
 # 设置时钟
 clock = pygame.time.Clock()
@@ -50,7 +51,7 @@ while running:
     pygame.display.flip()  # 更新显示
 
     # 控制帧率
-    clock.tick(10)
+    clock.tick(5)
     # time.sleep(0.1)
 
     # 检查退出

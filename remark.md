@@ -105,6 +105,11 @@ https://www.cnblogs.com/cenariusxz/p/12666938.html
 ### PPO（Proximal Policy Optimization，近端策略优化）是一种用于强化学习的算法
 ### MaskablePPO: 
 MaskablePPO 是 Proximal Policy Optimization (PPO) 的一个变体，通过动作掩蔽机制来增强标准的PPO算法。动作掩蔽可以在动作空间中禁用某些动作，这对于某些有约束的环境非常有用，比如在某些状态下某些动作是非法的或者无效的。
+```python
+model = PPO('MlpPolicy', env, verbose=1)    // MlpPolicy 主要用于处理扁平的、连续的或离散的观察空间。它适合于那些输入数据是一个一维数组的情况
+model = PPO(MultiInputPolicy, env, verbose=1) // MultiInputPolicy 适用于处理复杂的观察空间，特别是当观察空间是一个字典或包含多个输入的情况
+```
+
 
 ### ActionMasker:
 ActionMasker 是一个用于在环境中应用动作掩蔽的工具。它允许你在环境的某些状态下指定哪些动作是可用的，哪些不可用。

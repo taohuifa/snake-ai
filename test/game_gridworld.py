@@ -14,14 +14,7 @@ class GridWorldEnv(gym.Env):
 
         # Obervations are dictionaries with the agent's and the target's loaction
         # Each location is encoded as an element of {0,...,'size'}^2,i.e. MultiDiscrete([size,size])
-
-        self.observation_space = spaces.Dict(
-            {
-                "agent": spaces.Box(0, size - 1, shape=(2,), dtype=int),
-                "target": spaces.Box(0, size - 1, shape=(2,), dtype=int)
-
-            }
-        )
+        self.observation_space = spaces.Box(low=0, high=1, shape=(2, 2,), dtype=np.float32)  # 示例
         # We have 4 actions,corresponding to "right,left,up,down"
         self.action_space = spaces.Discrete(4)
         self._action_to_direction = {
@@ -33,12 +26,13 @@ class GridWorldEnv(gym.Env):
 
         self.window = None
         self.clock = None
+        self.reset()
 
     def _get_obs(self):
-        return {
-            "agent": self._agent_location,
-            "target": self._target_location
-        }
+        # 返回一个二维数组，包含代理和目标的位置
+        return np.array([[self._agent_location[0], self._agent_location[1]],
+                         [self._target_location[0], self._target_location[1]]],
+                        dtype=np.float32)
 
     def _get_info(self):
         return {}  # 返回一个空字典，您可以根据需要添加更多信息
@@ -52,15 +46,15 @@ class GridWorldEnv(gym.Env):
         while np.array_equal(self._agent_location, self._target_location):
             self._target_location = self.np_random.integers(0, self.size, size=2, dtype=int)
 
-        observation = self._get_obs()
-        info = self._get_info()
+        objs = self._get_obs()
+        # info = self._get_info()
 
         self._render_frame()
-
-        return observation, info
+        return objs
 
     def step(self, action):
-        # Map the action to the direction we walk in
+        # 确保 action 是整数
+        action = int(action)  # 添加这一行以确保 action 是整数
         direction = self._action_to_direction[action]
         # We use np.clip to make sure we don't leave the grid
         self._agent_location = np.clip(self._agent_location + direction, 0, self.size - 1)
@@ -70,19 +64,12 @@ class GridWorldEnv(gym.Env):
         info = self._get_info()
 
         self._render_frame()
-
         return observation, reward, terminated, info
 
     def render(self, mode: str = "human"):
         return self._render_frame(mode)
 
     def _render_frame(self, mode: str = "human"):
-        if self.window is None and mode == "human":
-            pygame.init()
-            pygame.display.init()
-            self.window = pygame.display.set_mode((self.window_size, self.window_size))
-        if self.clock is None and mode == "human":
-            self.clock = pygame.time.Clock()
 
         canvas = pygame.Surface((self.window_size, self.window_size))
         canvas.fill((255, 255, 255))
@@ -105,16 +92,24 @@ class GridWorldEnv(gym.Env):
             )
 
         if mode == "human":
-            # The following line copies our drawing from 'canvas' to the visible window
+            if self.window is None:
+                pygame.init()
+                pygame.display.init()
+                self.window = pygame.display.set_mode((self.window_size, self.window_size))
+            if self.clock is None:
+                self.clock = pygame.time.Clock()
+                # The following line copies our drawing from 'canvas' to the visible window
+
             self.window.blit(canvas, canvas.get_rect())
             pygame.event.pump()
             pygame.display.update()
 
             # We need to ensure that human-rendering occurs at the predefined framerate.
             # The following line will automatically add a delay to keep the framerate stable
-            self.clock.tick(self.metadata["render_fps"])
+            # self.clock.tick(self.metadata["render_fps"]) # 不进行频率等待
+            return
 
-        else:  # rgb_array
-            return np.transpose(
-                np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
-            )
+        # rgb_array
+        return np.transpose(
+            np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
+        )

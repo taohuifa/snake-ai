@@ -6,6 +6,7 @@ import torch.optim as optim  # 导入PyTorch的优化器模块
 from torch.distributions import Categorical  # 导入分类分布，用于处理离散动作
 import zipfile  # 导入zipfile库，用于处理zip文件
 import os  # 导入os库，用于文件操作
+import common
 
 
 # 定义策略网络
@@ -22,6 +23,7 @@ class PolicyNetwork(nn.Module):
         )
 
     def forward(self, x):
+        x = x.view(-1, 40)  # 根据需要调整形状
         return self.fc(x)  # 前向传播
 
 
@@ -50,7 +52,7 @@ class PPO:
         self.epsilon = epsilon  # PPO的剪切参数
         self.epochs = epochs  # 更新的轮数
 
-        print("env.observation_space.shape: ", env.observation_space.shape,
+        print("env.observation_space: ", env.observation_space.shape,
               "env.action_space.n: ", env.action_space.n)
         # 初始化策略网络
         self.policy = PolicyNetwork(env.observation_space.shape[0], env.action_space.n)
@@ -146,7 +148,7 @@ class PPO:
             states = torch.FloatTensor(np.array(states)).detach()  # shape: ([N,2])
             actions = torch.LongTensor(actions).detach()  # shape: ([N]), 每次一个动作
             old_log_probs = torch.stack(log_probs).detach()  # 将对数概率, 每一次选择这个动作的可能性高低, shape: ([N])
-            returns = torch.FloatTensor(returns).detach()  # shape: ([N]), 每次一个回报值(比起一次操作变化)
+            returns = torch.FloatTensor(returns).detach()  # shape: ([N]), 每次一个回报值(起一次操作变化)
             advantages = torch.FloatTensor(advantages).detach()  # 优势情况, shape: ([N])
             # print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
             if (timestep % 100 == 0) or (timestep == total_timesteps - 1):
@@ -206,12 +208,13 @@ class PPO:
 
 
 # game_name = 'CartPole-v1'
-# game_name = 'MountainCar-v0'
-game_name = 'CubeCrash-v0'
+game_name = 'MountainCar-v0'
+# game_name = 'game_gridworld'
 model_file = f"{game_name.replace('-','_').lower()}_test03"
 
+
 if __name__ == '__main__':
-    env = gym.make(game_name)  # 创建CartPole环境
+    env = common.gym_make(game_name)  # 创建CartPole环境
     # env = gym.make('MountainCar-v0')
     ppo = PPO(env, epochs=10)  # 初始化PPO算法
     ppo.learn(total_timesteps=1000)  # 开始学习
