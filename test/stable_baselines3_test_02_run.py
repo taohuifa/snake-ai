@@ -37,7 +37,7 @@ if __name__ == '__main__':
             print(f"game is finish: {info} {finish_times}/{reset_times}")
             finish_times += 1
             time.sleep(1)
-            env.reset()
+            obs = env.reset()
             time.sleep(1)
             if finish_times >= reset_times:
                 break
