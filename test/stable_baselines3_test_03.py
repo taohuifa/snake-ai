@@ -23,7 +23,6 @@ class PolicyNetwork(nn.Module):
         )
 
     def forward(self, x):
-        x = x.view(-1, 40)  # 根据需要调整形状
         return self.fc(x)  # 前向传播
 
 
@@ -52,12 +51,16 @@ class PPO:
         self.epsilon = epsilon  # PPO的剪切参数
         self.epochs = epochs  # 更新的轮数
 
+        input_dim = np.prod(env.observation_space.shape)
         print("env.observation_space: ", env.observation_space.shape,
+              "input_dim: ", input_dim,
               "env.action_space.n: ", env.action_space.n)
+
+        # obs = env.observation_space.reshape(-1)
         # 初始化策略网络
-        self.policy = PolicyNetwork(env.observation_space.shape[0], env.action_space.n)
+        self.policy = PolicyNetwork(input_dim, env.action_space.n)
         # 初始化价值网络
-        self.value = ValueNetwork(env.observation_space.shape[0])
+        self.value = ValueNetwork(input_dim)
         # 使用Adam优化器
         params = list(self.policy.parameters()) + list(self.value.parameters())
         # self.optimizer = optim.Adam(params, lr=learning_rate)
@@ -111,6 +114,7 @@ class PPO:
         return returns, advantages  # 返回回报和优势值
 
     def learn(self, total_timesteps):
+        idx = 0
         for timestep in range(total_timesteps):
             state = self.env.reset()  # 重置环境, state: ([2,])
             done = False  # 任务是否完成
@@ -121,14 +125,20 @@ class PPO:
 
             # 遍历尝试操作游戏, 第一次通常是200次就失败
             while not done:
-                # print(f"state: {state.shape}")
-                action, log_prob = self.get_action(state)  # 获取动作和对数概率
+                obs = torch.FloatTensor(state).reshape(-1)
+                # print(f"obs: {state.shape} {obs.shape}")
+
+                action, log_prob = self.get_action(obs)  # 获取动作和对数概率
                 next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励
-                value = self.value(torch.FloatTensor(state)).item()  # 计算当前状态的价值
-                print(f"step: {len(states)} action: {action} reward: {reward} done: {done}")
+                value = self.value(obs).item()  # 计算当前状态的价值
+
+                # 打印数据
+                idx += 1
+                if idx % 10000 == 0:
+                    print(f"[{idx}] timestep: {timestep} step: {len(states)} action: {action} reward: {reward} done: {done}")
 
                 # 存储数据(把每个步骤的处理结果和回包都记录起来)
-                states.append(state)  # size: ([2,])
+                states.append(np.array(obs.view(-1)))  # 确保每个状态都是一维的张量
                 actions.append(action)  # size: (1)
                 rewards.append(reward)  # size: (1)
                 log_probs.append(log_prob)  # size: (1)
@@ -139,15 +149,18 @@ class PPO:
                 total_reward += reward  # 累加奖励
 
             # 通过使用最后一个状态的价值，算法能够更准确地评估当前策略的表现，并进行相应的调整。
-            next_value = self.value(torch.FloatTensor(next_state)).item()  # 计算下一个状态的价值
+            next_state = torch.FloatTensor(next_state).reshape(-1)
+            next_value = self.value(next_state).item()  # 计算下一个状态的价值
+            # print(f"next_state: {next_state.shape} -> {next_state}")
             # 这里通过拿到1个最终游戏结果值, 倒序计算之前每一步的优势
             returns, advantages = self.compute_gae(rewards, values, next_value, dones)  # 计算回报和优势值
             # print(f"timestep: {timestep} returns: {len(returns)} {len(advantages)} from {len(values)} -> {next_value}: {len(rewards)}")
 
             # 转换为张量, 第一次通常执行200次就失败, N=200
+            # print(f"{states}")
             states = torch.FloatTensor(np.array(states)).detach()  # shape: ([N,2])
             actions = torch.LongTensor(actions).detach()  # shape: ([N]), 每次一个动作
-            old_log_probs = torch.stack(log_probs).detach()  # 将对数概率, 每一次选择这个动作的可能性高低, shape: ([N])
+            old_log_probs = torch.stack(log_probs).detach()  # 将对概率, 每一次选择这个动作的可能性高低, shape: ([N])
             returns = torch.FloatTensor(returns).detach()  # shape: ([N]), 每次一个回报值(起一次操作变化)
             advantages = torch.FloatTensor(advantages).detach()  # 优势情况, shape: ([N])
             # print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
@@ -208,8 +221,8 @@ class PPO:
 
 
 # game_name = 'CartPole-v1'
-game_name = 'MountainCar-v0'
-# game_name = 'game_gridworld'
+# game_name = 'MountainCar-v0'
+game_name = 'game_gridworld'
 model_file = f"{game_name.replace('-','_').lower()}_test03"
 
 

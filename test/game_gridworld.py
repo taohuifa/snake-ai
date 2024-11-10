@@ -7,7 +7,7 @@ from gym import spaces
 class GridWorldEnv(gym.Env):
     metadata = {"render_fps": 4}  # 这个metadata用于保存render（启动画面，下文会提到）的参数
 
-    def __init__(self, size=5):
+    def __init__(self, size=5, render_mode="none"):
         self.size = size  # The size of the square grid
         self.window_size = 512  # The size of the PyGame window
         self.np_random = np.random.default_rng()  # 添加这一行以初始化 np_random
@@ -24,6 +24,7 @@ class GridWorldEnv(gym.Env):
             3: np.array([0, -1])
         }
 
+        self.render_mode = None
         self.window = None
         self.clock = None
         self.reset()
@@ -49,7 +50,7 @@ class GridWorldEnv(gym.Env):
         objs = self._get_obs()
         # info = self._get_info()
 
-        self._render_frame()
+        self._render_frame(self.render_mode)
         return objs
 
     def step(self, action):
@@ -63,14 +64,15 @@ class GridWorldEnv(gym.Env):
         observation = self._get_obs()
         info = self._get_info()
 
-        self._render_frame()
+        self._render_frame(self.render_mode)
         return observation, reward, terminated, info
 
     def render(self, mode: str = "human"):
         return self._render_frame(mode)
 
     def _render_frame(self, mode: str = "human"):
-
+        if mode == "none":
+            return
         canvas = pygame.Surface((self.window_size, self.window_size))
         canvas.fill((255, 255, 255))
 

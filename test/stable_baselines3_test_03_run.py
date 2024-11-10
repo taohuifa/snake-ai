@@ -20,32 +20,36 @@ if __name__ == '__main__':
     # 初始化 pygame
     pygame.init()
     # 设置窗口
-    screen = pygame.display.set_mode((600, 400))
+    screen = pygame.display.set_mode((600, 600))
     pygame.display.set_caption("CartPole Control")
     clock = pygame.time.Clock()
     # 运行环境
     obs = env.reset()
     for epoch in range(1000):  # 运行1000个时间步
         # 控制帧率
-        clock.tick(30)
+        clock.tick(1)
 
         # 预测执行
+        obs = torch.FloatTensor(obs).reshape(-1)
         action, _states = model.predict(obs)
         obs, rewards, dones, info = env.step(action)
-        print(f"epoch: {epoch} action:{action} rewards:{rewards} info:{info}")
-        # 渲染环境
-        frame = env.render(mode='rgb_array')  # 获取渲染的帧
-        frame = np.transpose(frame, (1, 0, 2))  # 转置以适应 Pygame 的格式
-        frame_surface = pygame.surfarray.make_surface(frame)  # 创建 Pygame 表面
+        print(f"epoch: {epoch} action:{action} rewards:{rewards} info:{info} obs: {obs.reshape(-1)}")
+        # # 渲染环境
+        # frame = env.render(mode='rgb_array')  # 获取渲染的帧
+        # # frame = np.transpose(frame, (1, 0, 2))  # 转置以适应 Pygame 的格式
+        # frame_surface = pygame.surfarray.make_surface(frame)  # 创建 Pygame 表面
 
-        # 自动适应窗口尺寸
-        frame_surface = pygame.transform.scale(frame_surface, screen.get_size())  # 缩放到窗口大小
-        screen.blit(frame_surface, (0, 0))  # 将表面绘制到屏幕上
-        pygame.display.flip()  # 更新显示
+        # # 自动适应窗口尺寸
+        # frame_surface = pygame.transform.scale(frame_surface, screen.get_size())  # 缩放到窗口大小
+        # screen.blit(frame_surface, (0, 0))  # 将表面绘制到屏幕上
+        # # pygame.display.flip()  # 更新显示
+        env.render()
 
         if dones:
             print(f"game is finish: {info}")
+            time.sleep(1)
             obs = env.reset()
+            env.render()
             time.sleep(1)
             continue
 
