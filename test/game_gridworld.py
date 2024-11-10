@@ -24,7 +24,9 @@ class GridWorldEnv(gym.Env):
             3: np.array([0, -1])
         }
 
-        self.render_mode = None
+        self.step_idx = 0
+        self.max_step = size * size
+        self.render_mode = render_mode
         self.window = None
         self.clock = None
         self.reset()
@@ -47,6 +49,7 @@ class GridWorldEnv(gym.Env):
         while np.array_equal(self._agent_location, self._target_location):
             self._target_location = self.np_random.integers(0, self.size, size=2, dtype=int)
 
+        self.step_idx = 0
         objs = self._get_obs()
         # info = self._get_info()
 
@@ -59,8 +62,15 @@ class GridWorldEnv(gym.Env):
         direction = self._action_to_direction[action]
         # We use np.clip to make sure we don't leave the grid
         self._agent_location = np.clip(self._agent_location + direction, 0, self.size - 1)
+        self.step_idx += 1
+
+        # 使用 np.where 简化 terminated 的计算
         terminated = np.array_equal(self._agent_location, self._target_location)
-        reward = 1 if terminated else 0
+
+        # 合并 reward 的计算逻辑
+        reward = 1 if terminated else -1 if self.step_idx >= self.max_step else 0
+        terminated = terminated or (self.step_idx >= self.max_step)
+
         observation = self._get_obs()
         info = self._get_info()
 
@@ -71,7 +81,7 @@ class GridWorldEnv(gym.Env):
         return self._render_frame(mode)
 
     def _render_frame(self, mode: str = "human"):
-        if mode == "none":
+        if mode is None or mode == "none":
             return
         canvas = pygame.Surface((self.window_size, self.window_size))
         canvas.fill((255, 255, 255))

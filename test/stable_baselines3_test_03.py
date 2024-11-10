@@ -165,7 +165,7 @@ class PPO:
             advantages = torch.FloatTensor(advantages).detach()  # 优势情况, shape: ([N])
             # print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
             if (timestep % 100 == 0) or (timestep == total_timesteps - 1):
-                print(f"timestep: {timestep} Total reward: {total_reward} shape: {returns.shape[0]}")
+                print(f"timestep: {timestep} Total reward: {total_reward} step: {returns.shape[0]}")
 
             for epoch in range(self.epochs):
                 # logits = torch.tensor([0.5, 1.0, 0.1])  # 三个动作的 logits
@@ -229,7 +229,7 @@ model_file = f"{game_name.replace('-','_').lower()}_test03"
 if __name__ == '__main__':
     env = common.gym_make(game_name)  # 创建CartPole环境
     # env = gym.make('MountainCar-v0')
-    ppo = PPO(env, epochs=10)  # 初始化PPO算法
+    ppo = PPO(env, epochs=20)  # 初始化PPO算法
     ppo.learn(total_timesteps=1000)  # 开始学习
 
     # 保存模型
