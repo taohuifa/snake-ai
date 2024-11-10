@@ -12,7 +12,6 @@ import common
 game_name = 'game_gridworld'
 model_file = f"{game_name.replace('-','_').lower()}_test02"
 
-
 if __name__ == '__main__':
     print("start pid: %d" % (os.getpid()))
 
@@ -30,7 +29,7 @@ if __name__ == '__main__':
                                              name_prefix=model_file)
 
     # 训练模型
-    model.learn(total_timesteps=10000, callback=checkpoint_callback)
+    model.learn(total_timesteps=50000, callback=checkpoint_callback)
     print(f"model learn finish: {model} -> {model_file}")
 
     # 评估模型
