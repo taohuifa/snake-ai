@@ -56,7 +56,7 @@ class GridWorldEnv(gym.Env):
         self._render_frame(self.render_mode)
         return objs
 
-    def step(self, action):
+    def step(self, action, extra_info=None):
         # 确保 action 是整数
         action = int(action)  # 添加这一行以确保 action 是整数
         direction = self._action_to_direction[action]
@@ -76,6 +76,12 @@ class GridWorldEnv(gym.Env):
 
         self._render_frame(self.render_mode)
         return observation, reward, terminated, info
+
+    def close():
+        return
+
+    def seed():
+        return
 
     def render(self, mode: str = "human"):
         return self._render_frame(mode)

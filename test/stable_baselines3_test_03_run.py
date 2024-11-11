@@ -10,7 +10,7 @@ from stable_baselines3_test_03 import *
 
 
 if __name__ == '__main__':
-    env = common.gym_make(game_name)
+    env, tick = common.gym_make(game_name)
 
     # 加载模型
     load_file = f"logs/{model_file}.zip"
@@ -20,14 +20,15 @@ if __name__ == '__main__':
     # 初始化 pygame
     pygame.init()
     # 设置窗口
-    screen = pygame.display.set_mode((600, 600))
-    pygame.display.set_caption("CartPole Control")
+    # screen = pygame.display.set_mode((600, 600))
+    # pygame.display.set_caption("CartPole Control")
+    
     clock = pygame.time.Clock()
     # 运行环境
     obs = env.reset()
-    for epoch in range(1000):  # 运行1000个时间步
+    for epoch in range(10000):  # 运行1000个时间步
         # 控制帧率
-        clock.tick(1)
+        clock.tick(tick)
 
         # 预测执行
         obs = torch.FloatTensor(obs).reshape(-1)

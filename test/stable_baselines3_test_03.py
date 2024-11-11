@@ -7,6 +7,7 @@ from torch.distributions import Categorical  # 导入分类分布，用于处理
 import zipfile  # 导入zipfile库，用于处理zip文件
 import os  # 导入os库，用于文件操作
 import common
+from stable_baselines3.common.monitor import Monitor
 
 
 # 定义策略网络
@@ -135,7 +136,7 @@ class PPO:
                 # 打印数据
                 idx += 1
                 if idx % 10000 == 0:
-                    print(f"[{idx}] timestep: {timestep} step: {len(states)} action: {action} reward: {reward} done: {done}")
+                    print(f"[{idx}] timestep: {timestep} step: {len(states)} action: {action} reward: {reward} done: {done} state: {next_state.reshape(-1)}")
 
                 # 存储数据(把每个步骤的处理结果和回包都记录起来)
                 states.append(np.array(obs.view(-1)))  # 确保每个状态都是一维的张量
@@ -221,13 +222,14 @@ class PPO:
 
 
 # game_name = 'CartPole-v1'
-# game_name = 'MountainCar-v0'
-game_name = 'game_gridworld'
+game_name = 'MountainCar-v0'
+# game_name = 'game_gridworld'
 model_file = f"{game_name.replace('-','_').lower()}_test03"
 
 
 if __name__ == '__main__':
-    env = common.gym_make(game_name)  # 创建CartPole环境
+    env, _ = common.gym_make(game_name)
+    env = Monitor(env)
     # env = gym.make('MountainCar-v0')
     ppo = PPO(env, epochs=20)  # 初始化PPO算法
     ppo.learn(total_timesteps=1000)  # 开始学习

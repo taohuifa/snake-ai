@@ -3,6 +3,7 @@ import pygame
 import numpy as np
 import time
 import os
+import common
 
 
 # 遍历并输出 gym 环境注册信息
@@ -15,7 +16,7 @@ gameName = 'MountainCar-v0'
 # gameName = 'Pong-v0'
 
 # 创建 Gym 环境
-if gameName in ['CartPole-v1', 'CartPole-v0']:
+if gameName in {'CartPole-v1', 'CartPole-v0'}:
     env = gym.make(gameName)  # CartPole-v1（平衡车）
     action_map = {
         pygame.K_LEFT: 0,
@@ -23,7 +24,7 @@ if gameName in ['CartPole-v1', 'CartPole-v0']:
         0: None,  # 默认
     }
 elif gameName == 'MountainCar-v0':
-    env = gym.make(gameName)  # MountainCar-v0（山地车）
+    env, _ = common.gym_make(gameName)  # MountainCar-v0（山地车）
     action_map = {
         pygame.K_LEFT: 0,  # 向左推
         pygame.K_RIGHT: 2,  # 向右推
@@ -101,7 +102,7 @@ while running:
 
     # 采取动作
     observation, reward, done, info = env.step(action)
-    print(f"idx: {idx} action: {action} reward: {reward} info: {info}")
+    print(f"idx: {idx} obs: {observation.reshape(-1)} action: {action} reward: {reward} info: {info}")
 
     if done:
         print("game is done to reset")

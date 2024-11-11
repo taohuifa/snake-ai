@@ -38,7 +38,7 @@ if __name__ == '__main__':
             continue
 
         # 控制帧率
-        clock.tick(3)
+        clock.tick(30)
 
     # 关闭环境
     env.close()

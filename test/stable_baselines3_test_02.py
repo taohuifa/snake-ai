@@ -8,15 +8,16 @@ from stable_baselines3.common.callbacks import CheckpointCallback
 import common
 
 # game_name = 'CartPole-v1'
-# game_name = 'MountainCar-v0'
-game_name = 'game_gridworld'
+game_name = 'MountainCar-v0'
+# game_name = 'game_gridworld'
 model_file = f"{game_name.replace('-','_').lower()}_test02"
 
 if __name__ == '__main__':
     print("start pid: %d" % (os.getpid()))
+    env, _ = common.gym_make(game_name)
 
     # 创建 PPO 模型
-    env = Monitor(common.gym_make(game_name))
+    env = Monitor(env)
     print(f"动作空间的形状: {env.action_space.shape}, 可能的动作数量: {env.action_space.n}")
     print(f"观察数据的形状: {env.observation_space.shape}")
 
