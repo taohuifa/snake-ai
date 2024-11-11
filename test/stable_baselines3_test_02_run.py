@@ -11,9 +11,11 @@ import common
 
 if __name__ == '__main__':
     print("start pid: %d" % (os.getpid()))
-    env = Monitor(common.gym_make(game_name))
+    env, tick = common.gym_make(game_name)
+    env = Monitor(env)
     # 加载模型
-    model = PPO.load(f'./logs/{model_file}')
+    # model = PPO.load(f'./logs/{model_file}')
+    model = MaskablePPO.load(f'./logs/{model_file}')
 
     # 初始化 pygame
     pygame.init()
@@ -38,7 +40,7 @@ if __name__ == '__main__':
             continue
 
         # 控制帧率
-        clock.tick(30)
+        clock.tick(tick)
 
     # 关闭环境
     env.close()

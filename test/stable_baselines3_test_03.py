@@ -8,9 +8,31 @@ import zipfile  # 导入zipfile库，用于处理zip文件
 import os  # 导入os库，用于文件操作
 import common
 from stable_baselines3.common.monitor import Monitor
+import math
 
 
 # 定义策略网络
+class CnnPolicy(nn.Module):
+    def __init__(self, input_channels, num_actions):
+        super(CnnPolicy, self).__init__()
+        # 定义一个包含卷积层的神经网络
+        self.conv = nn.Sequential(
+            nn.Conv2d(input_channels, 32, kernel_size=3, stride=1, padding=1),  # 输入通道数为input_channels，输出通道数为32
+            nn.ReLU(),  # 激活函数
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),  # 输入通道数为32，输出通道数为64
+            nn.ReLU(),  # 激活函数
+            nn.Flatten(),  # 展平层
+            nn.Linear(64 * 8 * 8, 128),  # 假设输入图像大小为64x64，展平后连接到全连接层
+            nn.ReLU(),  # 激活函数
+            nn.Linear(128, num_actions)  # 输出层，输出动作的logits
+        )
+
+    def forward(self, x):
+        return self.conv(x)  # 前向传播
+
+# 定义策略网络
+
+
 class PolicyNetwork(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(PolicyNetwork, self).__init__()
@@ -44,9 +66,15 @@ class ValueNetwork(nn.Module):
         return self.fc(x)  # 前向传播
 
 
+def create_policy(policy_name: str, input_dim: int, output_dim: int):
+    if policy_name == "CnnPolicy":
+        return CnnPolicy(input_dim, output_dim)
+    return PolicyNetwork(input_dim, output_dim)
+
+
 # 实现PPO算法
 class PPO:
-    def __init__(self, env, learning_rate=3e-4, gamma=0.99, epsilon=0.2, epochs=100):
+    def __init__(self, env, policy_name="", learning_rate=3e-4, gamma=0.99, epsilon=0.2, epochs=100):
         self.env = env  # 环境
         self.gamma = gamma  # 折扣因子
         self.epsilon = epsilon  # PPO的剪切参数
@@ -59,7 +87,7 @@ class PPO:
 
         # obs = env.observation_space.reshape(-1)
         # 初始化策略网络
-        self.policy = PolicyNetwork(input_dim, env.action_space.n)
+        self.policy = create_policy(policy_name, input_dim, env.action_space.n)
         # 初始化价值网络
         self.value = ValueNetwork(input_dim)
         # 使用Adam优化器
@@ -214,7 +242,6 @@ class PPO:
         }, file_name)
 
     def load_model(self, file_name):
-
         # 加载模型的状态字典
         checkpoint = torch.load(file_name)
         self.policy.load_state_dict(checkpoint['policy_state_dict'])
@@ -231,8 +258,8 @@ if __name__ == '__main__':
     env, _ = common.gym_make(game_name)
     env = Monitor(env)
     # env = gym.make('MountainCar-v0')
-    ppo = PPO(env, epochs=20)  # 初始化PPO算法
-    ppo.learn(total_timesteps=1000)  # 开始学习
+    ppo = PPO(env, epochs=30)  # 初始化PPO算法
+    ppo.learn(total_timesteps=300)  # 开始学习
 
     # 保存模型
     save_file = f"logs/{model_file}.zip"

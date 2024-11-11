@@ -14,6 +14,7 @@ for env in gym.envs.registry.all():
 gameName = 'MountainCar-v0'
 # gameName = 'CubeCrash-v0'
 # gameName = 'Pong-v0'
+tick = 10
 
 # 创建 Gym 环境
 if gameName in {'CartPole-v1', 'CartPole-v0'}:
@@ -24,7 +25,7 @@ if gameName in {'CartPole-v1', 'CartPole-v0'}:
         0: None,  # 默认
     }
 elif gameName == 'MountainCar-v0':
-    env, _ = common.gym_make(gameName)  # MountainCar-v0（山地车）
+    env, tick = common.gym_make(gameName)  # MountainCar-v0（山地车）
     action_map = {
         pygame.K_LEFT: 0,  # 向左推
         pygame.K_RIGHT: 2,  # 向右推
@@ -83,7 +84,7 @@ while running:
     pygame.display.flip()  # 更新显示
 
     # 控制帧率
-    clock.tick(10)
+    clock.tick(tick)
     # time.sleep(0.1)
 
     # 检查退出
@@ -102,6 +103,7 @@ while running:
 
     # 采取动作
     observation, reward, done, info = env.step(action)
+    # action_mask = env.get_action_mask()
     print(f"idx: {idx} obs: {observation.reshape(-1)} action: {action} reward: {reward} info: {info}")
 
     if done:
