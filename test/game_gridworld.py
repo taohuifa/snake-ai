@@ -77,6 +77,35 @@ class GridWorldEnv(gym.Env):
         self._render_frame(self.render_mode)
         return observation, reward, terminated, info
 
+    def get_action_mask(self):
+        """
+        获取当前状态下的动作掩码。
+
+        返回:
+        np.array: 动作掩码数组
+        """
+        return np.array([self._check_action_validity(a) for a in range(self.action_space.n)])  # 确保返回的是一维数组
+
+    def _check_action_validity(self, action):
+        """
+        检查给定的动作是否有效。
+
+        参数:
+        action: 要检查的动作
+
+        返回:
+        bool: 如果动作有效返回True，否则返回False
+        """
+        # 检查动作是否在有效范围内
+        if action < 0 or action >= self.action_space.n:
+            print(f"Invalid action: {action}, action_space.n: {self.action_space.n}")  # 添加调试信息
+            return False  # 动作超出范围，返回False
+
+        direction = self._action_to_direction[action]
+        # 使用 np.clip 确保新位置在有效范围内
+        _agent_location = self._agent_location + direction
+        return not np.any(_agent_location < 0) and not np.any(_agent_location >= self.size)
+
     def close():
         return
 

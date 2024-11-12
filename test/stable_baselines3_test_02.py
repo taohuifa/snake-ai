@@ -23,8 +23,15 @@ if __name__ == '__main__':
     print(f"动作空间的形状: {env.action_space.shape}, 可能的动作数量: {env.action_space.n}")
     print(f"观察数据的形状: {env.observation_space.shape}")
 
+    # CnnPolicy
     # model = PPO('MlpPolicy', env, verbose=1)
-    model = MaskablePPO('MlpPolicy', env=env, verbose=1)
+    model = MaskablePPO('MlpPolicy', env=env,
+                        device="cuda",
+                        verbose=1,
+                        n_steps=2048,
+                        batch_size=512,
+                        n_epochs=4,
+                        gamma=0.94)
     # model = PPO('MultiInputPolicy', env, verbose=1)
     # os._exit(1)
 

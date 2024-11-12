@@ -12,7 +12,7 @@ import common
 if __name__ == '__main__':
     print("start pid: %d" % (os.getpid()))
     env, tick = common.gym_make(game_name)
-    env = Monitor(env)
+    # env = Monitor(env)
     # 加载模型
     # model = PPO.load(f'./logs/{model_file}')
     model = MaskablePPO.load(f'./logs/{model_file}')

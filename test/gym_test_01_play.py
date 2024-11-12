@@ -103,8 +103,9 @@ while running:
 
     # 采取动作
     observation, reward, done, info = env.step(action)
-    # action_mask = env.get_action_mask()
-    print(f"idx: {idx} obs: {observation.reshape(-1)} action: {action} reward: {reward} info: {info}")
+    action_mask = env.get_action_mask()
+    # print(f"idx: {idx} obs: {observation.reshape(-1)} action: {action} reward: {reward} info: {info}")
+    print(f"idx: {idx} obs: {observation.reshape(-1)} action: {action} reward: {reward} action_mask: {action_mask}")
 
     if done:
         print("game is done to reset")

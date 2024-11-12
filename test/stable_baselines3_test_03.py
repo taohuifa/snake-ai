@@ -98,24 +98,17 @@ class PPO:
     def predict(self, state):
         return self.get_action(state)
 
-    def get_action(self, state):
+    def get_action(self, state, use_action_mask: bool = True):
         state = torch.FloatTensor(state)  # 将状态转换为张量
-        # print("get_action", state)
-        logits = self.policy(state)  # 通过策略网络获取动作的logits, A为可选动作数量, size([A])
-        # print("get_action", state, "->", logits)
+        logits = self.policy(state)  # 通过策略网络获取动作的logits
+
+        if use_action_mask and self.env.get_action_mask is not None:
+            action_masks = torch.FloatTensor(self.env.get_action_mask())  # 获取动作掩码
+            logits = logits + (1 - action_masks) * -1e10  # 将被抹掉的动作的logits设置为一个很小的值
 
         dist = Categorical(logits=logits)  # 创建分类分布
-        # print("get_action", state, "->", dist)
-
-        # 通过决策, 得到分类情况
         action = dist.sample()  # 从分布中采样动作
-        # print("get_action", state, "->", action, dist.log_prob(action))
         log_prob = dist.log_prob(action)
-        # action.item() 取出概率最高的项
-        # dist.log_prob(action) 计算所选动作的对数概率
-        #   对数概率是指在给定状态下，选择特定动作的概率的对数值。对数概率越高代表选择这个动作更坚定
-        #   这在强化学习中用于计算损失函数，帮助优化策略。
-        # print(f"state: {state} -> action: {action}, {log_prob}, {logits}")
         return action.item(), log_prob  # 返回动作及其对数概率
 
     # 计算优势和回报率
@@ -142,7 +135,7 @@ class PPO:
         advantages = np.array(advantages)  # 转换为NumPy数组
         return returns, advantages  # 返回回报和优势值
 
-    def learn(self, total_timesteps):
+    def learn(self, total_timesteps, use_action_mask: bool = True):
         idx = 0
         for timestep in range(total_timesteps):
             state = self.env.reset()  # 重置环境, state: ([2,])
@@ -157,7 +150,7 @@ class PPO:
                 obs = torch.FloatTensor(state).reshape(-1)
                 # print(f"obs: {state.shape} {obs.shape}")
 
-                action, log_prob = self.get_action(obs)  # 获取动作和对数概率
+                action, log_prob = self.get_action(obs, use_action_mask)  # 获取动作和对数概率
                 next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励
                 value = self.value(obs).item()  # 计算当前状态的价值
 
@@ -247,6 +240,26 @@ class PPO:
         self.policy.load_state_dict(checkpoint['policy_state_dict'])
         self.value.load_state_dict(checkpoint['value_state_dict'])
 
+    def _check_action_validity(self, action):
+        """
+        检查给定的动作是否有效。
+
+        参数:
+        action: 要检查的动作
+
+        返回:
+        bool: 如果动作有效返回True，否则返回False
+        """
+        # 检查动作是否在有效范围内
+        if action < 0 or action >= self.env.action_space.n:
+            return False  # 动作超出范围，返回False
+
+        if self.env.get_action_mask is not None:
+            action_masks = self.env.get_action_mask()  # 获取动作掩码
+            return action_masks[action]  # 检查该动作是否有效
+
+        return True  # 如果没有动作掩码，默认所有动作有效
+
 
 # game_name = 'CartPole-v1'
 game_name = 'MountainCar-v0'
@@ -259,7 +272,7 @@ if __name__ == '__main__':
     env = Monitor(env)
     # env = gym.make('MountainCar-v0')
     ppo = PPO(env, epochs=30)  # 初始化PPO算法
-    ppo.learn(total_timesteps=300)  # 开始学习
+    ppo.learn(total_timesteps=1000)  # 开始学习
 
     # 保存模型
     save_file = f"logs/{model_file}.zip"

@@ -70,7 +70,8 @@ while running:
 
     # 采取动作
     observation, reward, done, info = env.step(action)
-    print(f"idx: {idx} action: {action} reward: {reward} info: {info}")
+    action_mask = env.get_action_mask()
+    print(f"idx: {idx} action: {action} reward: {reward} info: {info} action_mask: {action_mask}")
 
     if done:
         print("game is done to reset")

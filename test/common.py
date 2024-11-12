@@ -11,9 +11,9 @@ def mountaincar_reward(env, obs, rewards, done, info):
     values = obs.reshape(-1)
     # rewards = 1 - (0.52089536 - values[0])
     # rewards = 1 - math.sqrt((0.50974405 - values[0]) ** 2 + (0.03367784 - values[1]) ** 2)
-    rewards = math.sqrt((values[0] - -0.56914455)**2 + (values[1] - 0.00069396)**2) - 0.1
+    rewards = math.sqrt((values[0] - -0.56914455)**2 + (values[1] - 0.00069396)**2)
     # rewards = math.sqrt(values[0] ** 2 + values[1] ** 2)
-    rewards = rewards - (env.step_times / 200)
+    # rewards = rewards - (env.step_times / 200) * 0.3
 
     if env.step_times % 1000 == 0:
         print(f"[{env.step_times}] obs: {obs.reshape(-1)} rewards: {rewards}, done: {done} info: {info}")
@@ -55,7 +55,7 @@ class GameEnv(gym.Wrapper):
 
 def gym_make(game_name):
     if game_name == "game_gridworld":
-        return GridWorldEnv(), 1
+        return ActionMasker(env=GridWorldEnv(), action_mask_fn=GridWorldEnv.get_action_mask), 1
     elif game_name == 'MountainCar-v0':
         e = GameEnv(gym.make(game_name), mountaincar_reward, mountaincar_check_action_validity)
         return ActionMasker(env=e, action_mask_fn=GameEnv.get_action_mask), 30
