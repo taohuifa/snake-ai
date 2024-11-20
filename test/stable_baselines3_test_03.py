@@ -9,9 +9,16 @@ import os  # 导入os库，用于文件操作
 import common
 from stable_baselines3.common.monitor import Monitor
 import math
+import datetime, time
 
+
+# 创建logger实例
+logger = common.setup_logger('ppo_training',
+                             f'logs/training_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
 
 # 定义策略网络
+
+
 class CnnPolicy(nn.Module):
     def __init__(self, input_channels, num_actions):
         super(CnnPolicy, self).__init__()
@@ -30,9 +37,8 @@ class CnnPolicy(nn.Module):
     def forward(self, x):
         return self.conv(x)  # 前向传播
 
+
 # 定义策略网络
-
-
 class PolicyNetwork(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(PolicyNetwork, self).__init__()
@@ -82,9 +88,9 @@ class PPO:
         self.epochs = epochs  # 更新的轮数
 
         input_dim = np.prod(env.observation_space.shape)
-        print("env.observation_space: ", env.observation_space.shape,
-              "input_dim: ", input_dim,
-              "env.action_space.n: ", env.action_space.n)
+        logger.info(f"env.observation_space: {env.observation_space.shape}, "
+                    f"input_dim: {input_dim}, "
+                    f"env.action_space.n: {env.action_space.n}")
 
         # 设置设备
         self.device = device
@@ -164,7 +170,9 @@ class PPO:
                 # 打印数据
                 idx += 1
                 if idx % 10000 == 0:
-                    print(f"[{timestep}/{idx}] step: {len(states)} action: {action} reward: {reward} done: {done} state: {next_state.reshape(-1)}")
+                    logger.info(f"[{timestep}/{idx}] step: {len(states)} "
+                                f"action: {action} reward: {reward} done: {done} "
+                                f"state: {next_state.reshape(-1)}")
 
                 # 存储数据(把每个步骤的处理结果和回包都记录起来)
                 states.append(np.array(obs.cpu().view(-1)))  # 确保每个状态都是一维的张量
@@ -192,9 +200,12 @@ class PPO:
             old_log_probs = torch.stack(log_probs).detach().to(self.device)  # 将对概率, 每一次选择这个动作的可能性高低, shape: ([N])
             returns = torch.FloatTensor(returns).detach().to(self.device)  # shape: ([N]), 每次一个回报值(起一次操作变化)
             advantages = torch.FloatTensor(advantages).detach().to(self.device)  # 优势情况, shape: ([N])
+            self.optimizer.zero_grad()  # 清空梯度
+
             # print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
             if (timestep % 100 == 0) or (timestep == total_timesteps - 1):
-                print(f"timestep: {timestep} Total reward: {total_reward} step: {returns.shape[0]}")
+                logger.info(f"timestep: {timestep} Total reward: {total_reward} "
+                            f"step: {returns.shape[0]}")
 
             for epoch in range(self.epochs):
                 # logits = torch.tensor([0.5, 1.0, 0.1])  # 三个动作的 logits
@@ -228,7 +239,7 @@ class PPO:
                 l = actor_loss + 0.5 * critic_loss   # 总损失
                 # print(f"epoch: {epoch}, loss: {l}, ratio: {ratio.shape} actor_loss: {actor_loss} critic_loss: {critic_loss} ")
                 if timestep % 100 == 0 and (epoch == self.epochs):
-                    print(f"epoch: {epoch}, loss: {l}")
+                    logger.info(f"epoch: {epoch}, loss: {l}")
 
                 self.optimizer.zero_grad()  # 清空梯度
                 l.backward()  # 反向传播，保留计算图
@@ -275,15 +286,27 @@ model_file = f"{game_name.replace('-','_').lower()}_test03"
 
 
 if __name__ == '__main__':
+    start_time = time.time()  # 记录开始时间
+
     env, _ = common.gym_make(game_name)
     env = Monitor(env)
     # env = gym.make('MountainCar-v0')
-    ppo = PPO(env, epochs=10)  # 初始化PPO算法
+    ppo = PPO(env, epochs=30, device="cuda")  # 初始化PPO算法, cuda, cpu
+    logger.info(f"Starting training for {game_name}")
     ppo.learn(total_timesteps=100)  # 开始学习
 
     # 保存模型
     save_file = f"logs/{model_file}.zip"
-    ppo.save_model(save_file)  # 保存模型为.pt文件
-    print(f"learn finish, save {save_file}")
+    ppo.save_model(save_file)
 
-    env.close()  # 关闭环境
+    # 计算并记录总运行时间
+    end_time = time.time()
+    duration = end_time - start_time
+    hours = int(duration // 3600)
+    minutes = int((duration % 3600) // 60)
+    seconds = int(duration % 60)
+
+    logger.info(f"Training finished, model saved to {save_file}")
+    logger.info(f"Total running time: {hours:02d}:{minutes:02d}:{seconds:02d}")
+
+    env.close()
