@@ -74,7 +74,8 @@ def create_policy(policy_name: str, input_dim: int, output_dim: int):
 
 # 实现PPO算法
 class PPO:
-    def __init__(self, env, policy_name="", learning_rate=3e-4, gamma=0.99, epsilon=0.2, epochs=100):
+    def __init__(self, env, policy_name="", device="cuda", learning_rate=3e-4, gamma=0.99,
+                 epsilon=0.2, epochs=100):
         self.env = env  # 环境
         self.gamma = gamma  # 折扣因子
         self.epsilon = epsilon  # PPO的剪切参数
@@ -86,16 +87,15 @@ class PPO:
               "env.action_space.n: ", env.action_space.n)
 
         # 设置设备
-        # self.device = device
-        # if self.device == "auto":
-        #     self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        # self.device = torch.device(self.device)
+        self.device = device
+        if self.device == "auto":
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = torch.device(self.device)
 
-        # obs = env.observation_space.reshape(-1)
         # 初始化策略网络
-        self.policy = create_policy(policy_name, input_dim, env.action_space.n)
+        self.policy = create_policy(policy_name, input_dim, env.action_space.n).to(self.device)
         # 初始化价值网络
-        self.value = ValueNetwork(input_dim)
+        self.value = ValueNetwork(input_dim).to(self.device)
         # 使用Adam优化器
         params = list(self.policy.parameters()) + list(self.value.parameters())
         # self.optimizer = optim.Adam(params, lr=learning_rate)
@@ -105,11 +105,10 @@ class PPO:
         return self.get_action(state)
 
     def get_action(self, state, use_action_mask: bool = True):
-        state = torch.FloatTensor(state)  # 将状态转换为张量
         logits = self.policy(state)  # 通过策略网络获取动作的logits
 
         if use_action_mask and self.env.get_action_mask is not None:
-            action_masks = torch.FloatTensor(self.env.get_action_mask())  # 获取动作掩码
+            action_masks = torch.FloatTensor(self.env.get_action_mask()).to(self.device)  # 获取动作掩码
             logits = logits + (1 - action_masks) * -1e10  # 将被抹掉的动作的logits设置为一个很小的值
 
         dist = Categorical(logits=logits)  # 创建分类分布
@@ -153,20 +152,22 @@ class PPO:
 
             # 遍历尝试操作游戏, 第一次通常是200次就失败
             while not done:
-                obs = torch.FloatTensor(state).reshape(-1)
+                obs = torch.FloatTensor(state).detach().to(self.device)
                 # print(f"obs: {state.shape} {obs.shape}")
 
+                # 计算策略和价值
                 action, log_prob = self.get_action(obs, use_action_mask)  # 获取动作和对数概率
-                next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励
                 value = self.value(obs).item()  # 计算当前状态的价值
+                # 计算步骤
+                next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励
 
                 # 打印数据
                 idx += 1
                 if idx % 10000 == 0:
-                    print(f"[{idx}] timestep: {timestep} step: {len(states)} action: {action} reward: {reward} done: {done} state: {next_state.reshape(-1)}")
+                    print(f"[{timestep}/{idx}] step: {len(states)} action: {action} reward: {reward} done: {done} state: {next_state.reshape(-1)}")
 
                 # 存储数据(把每个步骤的处理结果和回包都记录起来)
-                states.append(np.array(obs.view(-1)))  # 确保每个状态都是一维的张量
+                states.append(np.array(obs.cpu().view(-1)))  # 确保每个状态都是一维的张量
                 actions.append(action)  # size: (1)
                 rewards.append(reward)  # size: (1)
                 log_probs.append(log_prob)  # size: (1)
@@ -177,7 +178,7 @@ class PPO:
                 total_reward += reward  # 累加奖励
 
             # 通过使用最后一个状态的价值，算法能够更准确地评估当前策略的表现，并进行相应的调整。
-            next_state = torch.FloatTensor(next_state).reshape(-1)
+            next_state = torch.FloatTensor(next_state) .to(self.device)
             next_value = self.value(next_state).item()  # 计算下一个状态的价值
             # print(f"next_state: {next_state.shape} -> {next_state}")
             # 这里通过拿到1个最终游戏结果值, 倒序计算之前每一步的优势
@@ -186,11 +187,11 @@ class PPO:
 
             # 转换为张量, 第一次通常执行200次就失败, N=200
             # print(f"{states}")
-            states = torch.FloatTensor(np.array(states)).detach()  # shape: ([N,2])
-            actions = torch.LongTensor(actions).detach()  # shape: ([N]), 每次一个动作
-            old_log_probs = torch.stack(log_probs).detach()  # 将对概率, 每一次选择这个动作的可能性高低, shape: ([N])
-            returns = torch.FloatTensor(returns).detach()  # shape: ([N]), 每次一个回报值(起一次操作变化)
-            advantages = torch.FloatTensor(advantages).detach()  # 优势情况, shape: ([N])
+            states = torch.FloatTensor(np.array(states)).detach().to(self.device)  # shape: ([N,2])
+            actions = torch.LongTensor(actions).detach().to(self.device)  # shape: ([N]), 每次一个动作
+            old_log_probs = torch.stack(log_probs).detach().to(self.device)  # 将对概率, 每一次选择这个动作的可能性高低, shape: ([N])
+            returns = torch.FloatTensor(returns).detach().to(self.device)  # shape: ([N]), 每次一个回报值(起一次操作变化)
+            advantages = torch.FloatTensor(advantages).detach().to(self.device)  # 优势情况, shape: ([N])
             # print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
             if (timestep % 100 == 0) or (timestep == total_timesteps - 1):
                 print(f"timestep: {timestep} Total reward: {total_reward} step: {returns.shape[0]}")
@@ -278,7 +279,7 @@ if __name__ == '__main__':
     env = Monitor(env)
     # env = gym.make('MountainCar-v0')
     ppo = PPO(env, epochs=10)  # 初始化PPO算法
-    ppo.learn(total_timesteps=1000)  # 开始学习
+    ppo.learn(total_timesteps=100)  # 开始学习
 
     # 保存模型
     save_file = f"logs/{model_file}.zip"
