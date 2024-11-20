@@ -85,6 +85,12 @@ class PPO:
               "input_dim: ", input_dim,
               "env.action_space.n: ", env.action_space.n)
 
+        # 设置设备
+        # self.device = device
+        # if self.device == "auto":
+        #     self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        # self.device = torch.device(self.device)
+
         # obs = env.observation_space.reshape(-1)
         # 初始化策略网络
         self.policy = create_policy(policy_name, input_dim, env.action_space.n)
@@ -271,7 +277,7 @@ if __name__ == '__main__':
     env, _ = common.gym_make(game_name)
     env = Monitor(env)
     # env = gym.make('MountainCar-v0')
-    ppo = PPO(env, epochs=30)  # 初始化PPO算法
+    ppo = PPO(env, epochs=10)  # 初始化PPO算法
     ppo.learn(total_timesteps=1000)  # 开始学习
 
     # 保存模型

@@ -4,6 +4,10 @@ import pygame
 from gym import spaces
 
 
+
+# Gym入门&自定义环境操作
+# https://blog.csdn.net/lyx369639/article/details/127085462
+
 class GridWorldEnv(gym.Env):
     metadata = {"render_fps": 4}  # 这个metadata用于保存render（启动画面，下文会提到）的参数
 

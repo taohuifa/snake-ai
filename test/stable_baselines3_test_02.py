@@ -25,13 +25,16 @@ if __name__ == '__main__':
 
     # CnnPolicy
     # model = PPO('MlpPolicy', env, verbose=1)
-    model = MaskablePPO('MlpPolicy', env=env,
-                        device="cuda",
-                        verbose=1,
-                        n_steps=2048,
-                        batch_size=512,
-                        n_epochs=4,
-                        gamma=0.94)
+    model = MaskablePPO(
+        'MlpPolicy',
+        # "CnnPolicy",# 无法使用, CNN是用于图片空间
+        env=env,
+        device="cuda",
+        verbose=1,
+        n_steps=2048,
+        batch_size=512,
+        n_epochs=4,
+        gamma=0.94)
     # model = PPO('MultiInputPolicy', env, verbose=1)
     # os._exit(1)
 
