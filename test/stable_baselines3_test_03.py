@@ -108,9 +108,11 @@ class PPO:
         self.optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9)
 
     def predict(self, state):
+        state = torch.FloatTensor(state).detach().to(self.device)
         return self.get_action(state)
 
     def get_action(self, state, use_action_mask: bool = True):
+        state = torch.FloatTensor(state).detach().to(self.device)
         logits = self.policy(state)  # 通过策略网络获取动作的logits
 
         if use_action_mask and self.env.get_action_mask is not None:
@@ -158,11 +160,11 @@ class PPO:
 
             # 遍历尝试操作游戏, 第一次通常是200次就失败
             while not done:
-                obs = torch.FloatTensor(state).detach().to(self.device)
-                # print(f"obs: {state.shape} {obs.shape}")
 
-                # 计算策略和价值
-                action, log_prob = self.get_action(obs, use_action_mask)  # 获取动作和对数概率
+                # 计算策略
+                action, log_prob = self.get_action(state, use_action_mask)  # 获取动作和对数概率
+                # 计算价值
+                obs = torch.FloatTensor(state).detach().to(self.device)
                 value = self.value(obs).item()  # 计算当前状态的价值
                 # 计算步骤
                 next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励

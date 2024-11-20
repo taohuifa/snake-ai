@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # 设置窗口
     # screen = pygame.display.set_mode((600, 600))
     # pygame.display.set_caption("CartPole Control")
-    
+
     clock = pygame.time.Clock()
     # 运行环境
     obs = env.reset()
@@ -32,7 +32,8 @@ if __name__ == '__main__':
 
         # 预测执行
         obs = torch.FloatTensor(obs).reshape(-1)
-        action, _states = model.predict(obs)
+        # action, _states = model.predict(obs)
+        action, _ = model.get_action(obs, True)
         obs, rewards, dones, info = env.step(action)
         print(f"epoch: {epoch} action:{action} rewards:{rewards} info:{info} obs: {obs.reshape(-1)}")
         # # 渲染环境
