@@ -9,7 +9,8 @@ import os  # 导入os库，用于文件操作
 import common
 from stable_baselines3.common.monitor import Monitor
 import math
-import datetime, time
+import datetime
+import time
 
 
 # 创建logger实例
@@ -108,11 +109,11 @@ class PPO:
         self.optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=0.9)
 
     def predict(self, state):
-        state = torch.FloatTensor(state).detach().to(self.device)
+        state = torch.FloatTensor(state).reshape(-1).detach().to(self.device)
         return self.get_action(state)
 
     def get_action(self, state, use_action_mask: bool = True):
-        state = torch.FloatTensor(state).detach().to(self.device)
+        state = torch.FloatTensor(state).reshape(-1).detach().to(self.device)
         logits = self.policy(state)  # 通过策略网络获取动作的logits
 
         if use_action_mask and self.env.get_action_mask is not None:
@@ -164,7 +165,7 @@ class PPO:
                 # 计算策略
                 action, log_prob = self.get_action(state, use_action_mask)  # 获取动作和对数概率
                 # 计算价值
-                obs = torch.FloatTensor(state).detach().to(self.device)
+                obs = torch.FloatTensor(state).reshape(-1).detach().to(self.device)
                 value = self.value(obs).item()  # 计算当前状态的价值
                 # 计算步骤
                 next_state, reward, done, _ = self.env.step(action)  # 执行动作并获取下一个状态和奖励
@@ -188,7 +189,7 @@ class PPO:
                 total_reward += reward  # 累加奖励
 
             # 通过使用最后一个状态的价值，算法能够更准确地评估当前策略的表现，并进行相应的调整。
-            next_state = torch.FloatTensor(next_state) .to(self.device)
+            next_state = torch.FloatTensor(next_state).reshape(-1).to(self.device)
             next_value = self.value(next_state).item()  # 计算下一个状态的价值
             # print(f"next_state: {next_state.shape} -> {next_state}")
             # 这里通过拿到1个最终游戏结果值, 倒序计算之前每一步的优势
@@ -282,8 +283,8 @@ class PPO:
 
 
 # game_name = 'CartPole-v1'
-game_name = 'MountainCar-v0'
-# game_name = 'game_gridworld'
+# game_name = 'MountainCar-v0'
+game_name = 'game_gridworld'
 model_file = f"{game_name.replace('-','_').lower()}_test03"
 
 
@@ -293,9 +294,9 @@ if __name__ == '__main__':
     env, _ = common.gym_make(game_name)
     env = Monitor(env)
     # env = gym.make('MountainCar-v0')
-    ppo = PPO(env, epochs=30, device="cuda")  # 初始化PPO算法, cuda, cpu
+    ppo = PPO(env, epochs=5, device="cuda")  # 初始化PPO算法, cuda, cpu
     logger.info(f"Starting training for {game_name}")
-    ppo.learn(total_timesteps=100)  # 开始学习
+    ppo.learn(total_timesteps=10000)  # 开始学习
 
     # 保存模型
     save_file = f"logs/{model_file}.zip"

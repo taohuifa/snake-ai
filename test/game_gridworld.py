@@ -110,10 +110,10 @@ class GridWorldEnv(gym.Env):
         _agent_location = self._agent_location + direction
         return not np.any(_agent_location < 0) and not np.any(_agent_location >= self.size)
 
-    def close():
+    def close(self):
         return
 
-    def seed():
+    def seed(self):
         return
 
     def render(self, mode: str = "human"):
