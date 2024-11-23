@@ -2,8 +2,8 @@ import math
 
 import gym
 import numpy as np
-
 from snake_game import SnakeGame
+from pynput import keyboard
 
 
 class SnakeEnv(gym.Env):
@@ -183,9 +183,41 @@ class SnakeEnv(gym.Env):
 # 使用随机动作测试环境的代码（已注释掉）
 NUM_EPISODES = 100
 # RENDER_DELAY = 0.001
-RENDER_DELAY = 0.1
+# RENDER_DELAY = 0.1
+RENDER_DELAY = 0.5
 from matplotlib import pyplot as plt
 import time
+
+# 在主函数前添加按键状态控制
+current_key = None
+current_action = 0
+
+
+def on_press(key):
+    global current_key, current_action
+    current_key = key
+    try:
+        # 0: 上, 1: 左, 2: 右, 3: 下
+        if key == keyboard.Key.up:
+            current_key = 0
+            current_action = 0
+        elif key == keyboard.Key.left:
+            current_key = 1
+            current_action = 1
+        elif key == keyboard.Key.right:
+            current_key = 2
+            current_action = 2
+        elif key == keyboard.Key.down:
+            current_key = 3
+            current_action = 3
+    except AttributeError:
+        pass
+
+
+def on_release(key):
+    global current_key
+    current_key = None
+
 
 if __name__ == "__main__":
     env = SnakeEnv(silent_mode=False)
@@ -203,6 +235,12 @@ if __name__ == "__main__":
     # 0: 上, 1: 左, 2: 右, 3: 下
     action_list = [1, 1, 1, 0, 0, 0, 2, 2, 2, 3, 3, 3]
 
+    # 在主函数开始处添加监听器
+    listener = keyboard.Listener(
+        on_press=on_press,
+        on_release=on_release)
+    listener.start()
+
     for _ in range(NUM_EPISODES):
         obs = env.reset()
         done = False
@@ -210,13 +248,16 @@ if __name__ == "__main__":
         while not done:
             # plt.imshow(obs, interpolation='nearest')
             # plt.show()
-            action = env.action_space.sample()
+            # action = env.action_space.sample()
+            action = current_action 
+            # print(f"action: {action}")
+
             # action = action_list[i]
             i = (i + 1) % len(action_list)
             obs, reward, done, info = env.step(action)
             sum_reward += reward
             if np.absolute(reward) > 0.001:
-                print(reward)
+                print(f"action: {action} obs: {obs.reshape(-1)} reward: {reward}")
             env.render()
             time.sleep(RENDER_DELAY)
 
