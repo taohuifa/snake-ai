@@ -166,50 +166,94 @@ class SnakeEnv(gym.Env):
         obs[tuple(self.game.food)] = -1.0
         return obs
 
+
 # Test the environment using random actions
-# NUM_EPISODES = 100
+NUM_EPISODES = 100
 # RENDER_DELAY = 0.001
-# from matplotlib import pyplot as plt
+RENDER_DELAY = 0.5
+from matplotlib import pyplot as plt
+from pynput import keyboard
 
-# if __name__ == "__main__":
-#     env = SnakeEnv(silent_mode=False)
 
-    # # Test Init Efficiency
+# 在主函数前添加按键状态控制
+current_key = None
+current_action = 0
+
+
+def on_press(key):
+    global current_key, current_action
+    current_key = key
+    try:
+        # 0: 上, 1: 左, 2: 右, 3: 下
+        if key == keyboard.Key.up:
+            current_key = 0
+            current_action = 0
+        elif key == keyboard.Key.left:
+            current_key = 1
+            current_action = 1
+        elif key == keyboard.Key.right:
+            current_key = 2
+            current_action = 2
+        elif key == keyboard.Key.down:
+            current_key = 3
+            current_action = 3
+    except AttributeError:
+        pass
+
+
+def on_release(key):
+    global current_key
+    current_key = None
+
+
+if __name__ == "__main__":
+    env = SnakeEnv(silent_mode=False)
+
+    # 在主函数开始处添加监听器
+    listener = keyboard.Listener(
+        on_press=on_press,
+        on_release=on_release)
+    listener.start()
+
+    # Test Init Efficiency
     # print(MODEL_PATH_S)
     # print(MODEL_PATH_L)
-    # num_success = 0
-    # for i in range(NUM_EPISODES):
-    #     num_success += env.reset()
-    # print(f"Success rate: {num_success/NUM_EPISODES}")
+    num_success = 0
+    for i in range(NUM_EPISODES):
+        num_success += env.reset()
+    print(f"Success rate: {num_success/NUM_EPISODES}")
 
-    # sum_reward = 0
+    sum_reward = 0
 
-    # # 0: UP, 1: LEFT, 2: RIGHT, 3: DOWN
-    # action_list = [1, 1, 1, 0, 0, 0, 2, 2, 2, 3, 3, 3]
+    # 0: UP, 1: LEFT, 2: RIGHT, 3: DOWN
+    action_list = [1, 1, 1, 0, 0, 0, 2, 2, 2, 3, 3, 3]
 
-    # for _ in range(NUM_EPISODES):
-    #     obs = env.reset()
-    #     done = False
-    #     i = 0
-    #     while not done:
-    #         plt.imshow(obs, interpolation='nearest')
-    #         plt.show()
-    #         action = env.action_space.sample()
-    #         # action = action_list[i]
-    #         i = (i + 1) % len(action_list)
-    #         obs, reward, done, info = env.step(action)
-    #         sum_reward += reward
-    #         if np.absolute(reward) > 0.001:
-    #             print(reward)
-    #         env.render()
+    for _ in range(NUM_EPISODES):
+        obs = env.reset()
+        done = False
+        i = 0
+        while not done:
+            # plt.imshow(obs, interpolation='nearest')
+            # plt.show()
 
-    #         time.sleep(RENDER_DELAY)
-    #     # print(info["snake_length"])
-    #     # print(info["food_pos"])
-    #     # print(obs)
-    #     print("sum_reward: %f" % sum_reward)
-    #     print("episode done")
-    #     # time.sleep(100)
+            # action = env.action_space.sample()
+            action = current_action
 
-    # env.close()
-    # print("Average episode reward for random strategy: {}".format(sum_reward/NUM_EPISODES))
+            # action = action_list[i]
+            i = (i + 1) % len(action_list)
+            obs, reward, done, info = env.step(action)
+            sum_reward += reward
+            if np.absolute(reward) > 0.001:
+                print(f"action: {action} reward: {reward}")
+            env.render()
+
+            time.sleep(RENDER_DELAY)
+        # print(info["snake_length"])
+        # print(info["food_pos"])
+        # print(obs)
+        print("sum_reward: %f" % sum_reward)
+        print("episode done")
+        # time.sleep(100)
+
+    env.close()
+    print("Average episode reward for random strategy: {}".format(sum_reward / NUM_EPISODES))
