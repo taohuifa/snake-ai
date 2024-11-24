@@ -34,7 +34,7 @@ def mountaincar_reward(env, obs, rewards, done, info):
     # rewards = env._max_rewards * 3 + speed_reward + distance_reward - time_punish
     rewards = ((speed_reward * 20 + distance_reward) * 0.5) - time_punish
 
-    if env._step_times % 1000 == 0:
+    if env._step_times % 10 == 0:
         print(f"[{env._step_times}] obs: {obs.reshape(-1)} rewards: {rewards}, done: {done} info: {info}")
 
     return obs, rewards, done, info
@@ -50,20 +50,23 @@ class GameEnv(gym.Wrapper):
         super().__init__(env=env)
         self._reward_func = reward_func
         self._check_action_validity = _check_action_validity
-        self._step_times = 0
-        self._max_rewards = 0
+        self.reset()
 
     def reset(self, **kwargs):
         self._step_times = 0
         self._max_rewards = 0
+        self._pre_obs = None
+        self._obs = None
         return self.env.reset(**kwargs)
 
     def step(self, action):
         self._step_times += 1
+        self._pre_obs = self._obs
         if self._reward_func is None:
             return self.env.step(action)
         # 使用_reward_func
         obs, rewards, done, info = self.env.step(action)
+        self._obs = obs
         return self._reward_func(self, obs, rewards, done, info)
 
     def get_action_mask(self):
@@ -85,37 +88,74 @@ def gym_make(game_name):
     return gym.make(game_name), 30
 
 
-
-
 # 在文件开头添加logger配置
 def setup_logger(name, log_file, level=logging.INFO):
     """设置logger"""
     # 创建logs目录（如果不存在）
     os.makedirs('logs', exist_ok=True)
-    
+
     # 创建格式化器
     formatter = logging.Formatter(
         fmt='%(asctime)s [%(levelname)s] %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
-    
+
     # 创建处理器 - 文件处理器
     file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(formatter)
-    
+
     # 创建处理器 - 控制台处理器
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
-    
+
     # 获取logger
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    
+
     # 清除已存在的处理器
     logger.handlers.clear()
-    
+
     # 添加处理器
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-    
+
     return logger
+
+
+from pynput import keyboard
+
+current_key = None
+current_action = None
+_actions = {}
+
+
+def on_press(key):
+    global current_key, current_action
+    current_key = key
+    try:
+        current_action = _actions[key]
+        print(f"press: {key} -> {current_action}")
+        # 0: 上, 1: 左, 2: 右, 3: 下 : keyboard.Key.up
+    except Exception:
+        # pass
+        print(f"no found press key: {key}")
+
+
+def on_release(key):
+    global current_key, current_action
+    current_key = None
+    current_action = _actions[0]
+    print(f"release key: {key} -> {current_action}")
+
+
+def init_keyboard_listener(actions):
+    global _actions, current_action
+    _actions = actions
+    current_action = _actions[0]
+    print(f"keyboard: {_actions}")
+
+    # 在主函数开始处添加监听器
+    listener = keyboard.Listener(
+        on_press=on_press,
+        on_release=on_release)
+    listener.start()
