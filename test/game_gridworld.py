@@ -4,7 +4,6 @@ import pygame
 from gym import spaces
 
 
-
 # Gym入门&自定义环境操作
 # https://blog.csdn.net/lyx369639/article/details/127085462
 
@@ -71,8 +70,11 @@ class GridWorldEnv(gym.Env):
         # 使用 np.where 简化 terminated 的计算
         terminated = np.array_equal(self._agent_location, self._target_location)
 
+        # 计算距离
+        dis = np.linalg.norm(self._agent_location - self._target_location) / self.size
+
         # 合并 reward 的计算逻辑
-        reward = 1 if terminated else -1 if self.step_idx >= self.max_step else 0
+        reward = 1 if terminated else -1 if self.step_idx >= self.max_step else (-dis)
         terminated = terminated or (self.step_idx >= self.max_step)
 
         observation = self._get_obs()

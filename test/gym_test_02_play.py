@@ -4,6 +4,7 @@ import numpy as np
 import time
 import os
 from common import *
+import matplotlib.pyplot as plt
 
 
 env = GridWorldEnv()  # CartPole-v1（平衡车）
@@ -33,6 +34,7 @@ pygame.display.set_caption("Pong Control")
 
 # 设置时钟
 clock = pygame.time.Clock()
+rewards = []
 
 # 游戏循环
 running = True
@@ -72,11 +74,27 @@ while running:
     observation, reward, done, info = env.step(action)
     action_mask = env.get_action_mask()
     print(f"idx: {idx} action: {action} reward: {reward} info: {info} action_mask: {action_mask}")
+    rewards.append(reward)  # 新增：收集reward
 
     if done:
         print("game is done to reset")
         observation = env.reset()
         time.sleep(1)
+
+        
+        # 绘制reward时序图
+        plt.figure(figsize=(10, 5))
+        plt.plot(rewards, label='Rewards', color='blue')
+        plt.xlabel('Steps')
+        plt.ylabel('Values')
+        plt.grid(True)
+        plt.legend()  # 添加图例
+        plt.show()
+
+        # 重置reward收集列表
+        rewards = []
+        pos = []
+        speeds = []
         # break
         continue
 

@@ -131,15 +131,15 @@ class PPO:
 
         # 反向计算优势值
         for t in reversed(range(len(rewards))):
-            # r = 1.0 - (len(rewards) - t) / len(rewards)
             r = (len(rewards) - t) / len(rewards)
             # 损失误差: 奖励值 + (gamma * 下一次的价值) * (如果成功, 则下一次的DT这次的损失为0)
-            delta = rewards[t] + gamma * last_value * (1 - dones[t]) - values[t]  # 计算TD误差
-            last_advantage = delta + gamma * lam * (1 - dones[t]) * last_advantage * r  # 计算优势值
-            # print(f"compute_gae[{t}]: reward: {rewards[t]} value: {values[t]} -> {last_value}, done: {dones[t]}. delta: {delta}, last_advantage: {last_advantage} r: {r}")
+            delta = rewards[t] + (gamma * last_value * (1 - dones[t])) - values[t]  # 计算TD误差
+            last_advantage = delta + (gamma * lam * (1 - dones[t]) * last_advantage) * r  # 计算优势值
+            print(f"[{t}/{r:0.2f}]: reward: {rewards[t]:0.2f} value: {values[t]:0.2f} -> {last_value:0.2f}, delta: {delta:0.2f}, last_advantage: {last_advantage:0.2f}")
             advantages.insert(0, last_advantage)  # 将优势值插入到列表的开头
             last_value = values[t]  # 更新最后的价值
 
+        # os.exit(1)
         returns = np.array(advantages) + values  # 计算回报
         advantages = np.array(advantages)  # 转换为NumPy数组
         return returns, advantages  # 返回回报和优势值
@@ -167,8 +167,8 @@ class PPO:
 
                 # 打印数据
                 idx += 1
-                if idx % 10000 == 0:
-                    logger.info(f"[{timestep}/{idx}] step: {len(states)} "
+                if idx % 100000 == 0:
+                    logger.info(f"[{timestep}] step: {len(states)} "
                                 f"action: {action} reward: {reward} done: {done} "
                                 f"state: {next_state.reshape(-1)}")
 
@@ -202,7 +202,7 @@ class PPO:
 
             # print(f"timestep: {timestep} Total reward: {total_reward}, shape: {states.shape} {returns.shape}, old_log_probs: {old_log_probs.shape}")
             if (timestep % 100 == 0) or (timestep == total_timesteps - 1):
-                logger.info(f"timestep: {timestep} Total reward: {total_reward} "
+                logger.info(f"timestep: {timestep} Total reward: {total_reward} last: {rewards[len(rewards)-1]} "
                             f"step: {returns.shape[0]}")
 
             for epoch in range(self.epochs):

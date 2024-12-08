@@ -4,6 +4,7 @@ import numpy as np
 import time
 import os
 import common
+import matplotlib.pyplot as plt
 
 
 # 遍历并输出 gym 环境注册信息
@@ -67,9 +68,14 @@ for action in range(env.action_space.n):
 # 设置时钟
 clock = pygame.time.Clock()
 
-# 游戏循环
+# 在主游戏循环前添加reward收集列表
 running = True
 idx = 0
+rewards = []  # 新增：用于收集reward
+pos = []
+speeds = []
+episode_rewards = []  # 新增：用于收集每个episode的总reward
+
 while running:
     idx = idx + 1
 
@@ -109,13 +115,48 @@ while running:
     # print(f"idx: {idx} obs: {observation.reshape(-1)} action: {action} reward: {reward} info: {info}")
     # print(f"idx: {idx} obs: {observation.reshape(-1)} action: {action} reward: {reward} action_mask: {action_mask}")
 
+    # 在step之后收集reward
+    obs = observation.reshape(-1)
+    rewards.append(reward)  # 新增：收集reward
+    pos.append(obs[0])
+    speeds.append(obs[1] * 10)
+
     if done:
         print("game is done to reset")
+        total_reward = sum(rewards)  # 计算本轮总reward
+        episode_rewards.append(total_reward)  # 保存本轮总reward
+        print(f"Episode finished with total reward: {total_reward} {reward}")
+
+        # 绘制reward时序图
+        plt.figure(figsize=(10, 5))
+        plt.plot(rewards, label='Rewards', color='blue')
+        plt.plot(pos, label='Position', color='red')
+        plt.plot(speeds, label='Speed', color='green')
+        plt.title(f'Rewards over time (Episode total: {total_reward:.2f})')
+        plt.xlabel('Steps')
+        plt.ylabel('Values')
+        plt.grid(True)
+        plt.legend()  # 添加图例
+        plt.show()
+
+        # 重置reward收集列表
+        rewards = []
+        pos = []
+        speeds = []
+
         observation = env.reset()
         time.sleep(1)
-        # break
         continue
 
+# 在游戏结束时绘制所有episode的总reward
+plt.figure(figsize=(10, 5))
+plt.plot(episode_rewards, label='Episode Rewards', color='purple')
+plt.title('Total Rewards per Episode')
+plt.xlabel('Episode')
+plt.ylabel('Total Reward')
+plt.grid(True)
+plt.legend()  # 添加图例
+plt.show()
 
 # 结束
 env.close()
