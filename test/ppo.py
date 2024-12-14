@@ -135,7 +135,7 @@ class PPO:
             # 损失误差: 奖励值 + (gamma * 下一次的价值) * (如果成功, 则下一次的DT这次的损失为0)
             delta = rewards[t] + (gamma * last_value * (1 - dones[t])) - values[t]  # 计算TD误差
             last_advantage = delta + (gamma * lam * (1 - dones[t]) * last_advantage) * r  # 计算优势值
-            print(f"[{t}/{r:0.2f}]: reward: {rewards[t]:0.2f} value: {values[t]:0.2f} -> {last_value:0.2f}, delta: {delta:0.2f}, last_advantage: {last_advantage:0.2f}")
+            # print(f"[{t}/{r:0.2f}]: reward: {rewards[t]:0.2f} value: {values[t]:0.2f} -> {last_value:0.2f}, delta: {delta:0.2f}, last_advantage: {last_advantage:0.2f}")
             advantages.insert(0, last_advantage)  # 将优势值插入到列表的开头
             last_value = values[t]  # 更新最后的价值
 

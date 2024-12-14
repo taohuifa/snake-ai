@@ -93,7 +93,7 @@ def mountaincar_reward(env, obs, rewards, done, info):
 
 def mountaincar_check_action_validity(env, action: int) -> bool:
     # print(f"mountaincar_check_action_validity: {action} -> { action != 0}")
-    return action != 0
+    return action != 1
 
 
 class GameEnv(gym.Wrapper):
