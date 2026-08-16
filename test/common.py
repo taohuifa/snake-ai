@@ -31,10 +31,15 @@ def adjustme(next_obs):
     return reward
 
 
+def _height(xs):
+    return np.sin(3 * xs) * .45 + .55
+
+
 def mountaincar_reward(env, obs, rewards, done, info):
     values = obs.reshape(-1)
     distance = values[0]  # -1.1 ~ 0.1, -0.5为起点
     speed = values[1]  # 0~1
+    height = _height(distance)
 
     # 胜利判断
     if done:
@@ -78,7 +83,8 @@ def mountaincar_reward(env, obs, rewards, done, info):
     # 根据增长, 计算奖励
     # rewards = (cur_rewards - float(env._pre_cur_rewards)) /float(env._pre_cur_rewards)
     # rewards = np.clip(rewards, -1, 1)
-    rewards = cur_rewards - 1
+    # rewards = cur_rewards - 1
+    rewards = height - 0.5
 
     # rewards = adjustme(obs)
     # print(f"{env._pre_cur_rewards} -> {cur_rewards} = {rewards}")

@@ -1,0 +1,6 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "python.defaultInterpreterPath": "C:\\ProgramData\\miniconda3\\envs\\snake_ai\\python.exe",
+    "python.terminal.activateEnvironment": true
+}

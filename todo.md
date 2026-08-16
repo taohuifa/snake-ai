@@ -9,3 +9,12 @@
 
 
 
+
+
+
+# 环境初始化
+
+```bash
+conda create -n snake_ai python=3.8.16
+conda activate snake_ai
+```
