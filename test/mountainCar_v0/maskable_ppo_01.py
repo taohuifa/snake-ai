@@ -197,7 +197,7 @@ def train():
     # norm_obs=True:  归一化观测（关键，解决 position/velocity 量级差异）
     # norm_reward=False: 不归一化 reward（保持 reward shaping 的原始尺度）
     env = DummyVecEnv([lambda: env])
-    env = VecNormalize(env, norm_obs=NORM_OBS, norm_reward=False)
+    env = VecNormalize(venv=env, norm_obs=NORM_OBS, norm_reward=False)
 
     # 评估环境也归一化，但 training=False（不更新统计量，用训练环境的统计）
     eval_env = DummyVecEnv([lambda: eval_env])
